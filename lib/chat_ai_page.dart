@@ -1,0 +1,335 @@
+// chat_ai_page.dart
+
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
+class ChatAIPage extends StatefulWidget {
+  final String sessionKey;
+
+  const ChatAIPage({super.key, required this.sessionKey});
+
+  @override
+  State<ChatAIPage> createState() => _ChatAIPageState();
+}
+
+class _ChatAIPageState extends State<ChatAIPage> {
+  final TextEditingController _messageController = TextEditingController();
+  final List<ChatMessage> _messages = [];
+  bool _isLoading = false;
+  String? _currentSessionId;
+  List<ChatSession> _chatSessions = [];
+  bool _showSessionList = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadChatSessions();
+  }
+
+  Future<void> _loadChatSessions() async {
+    try {
+      final response = await http.get(Uri.parse('https://tapops.fanzhosting.my.id/api/tools/chat/list?key=${widget.sessionKey}'));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['valid'] == true) {
+          setState(() {
+            _chatSessions = (data['chatHistoryList'] as List).map((session) => ChatSession.fromJson(session)).toList();
+          });
+        }
+      }
+    } catch (e) {
+      _showSnackBar('Failed to load chat sessions', isError: true);
+    }
+  }
+
+  Future<void> _createNewSession() async {
+    try {
+      final response = await http.get(Uri.parse('https://tapops.fanzhosting.my.id/api/tools/chat/new-session?key=${widget.sessionKey}'));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['valid'] == true) {
+          setState(() {
+            _currentSessionId = data['sessionId'];
+            _messages.clear();
+            _showSessionList = false;
+          });
+          _loadChatSessions();
+          _showSnackBar('New session created');
+        }
+      }
+    } catch (e) {
+      _showSnackBar('Failed to create new session', isError: true);
+    }
+  }
+
+  Future<void> _loadChatSession(String sessionId) async {
+    try {
+      final response = await http.get(Uri.parse('https://tapops.fanzhosting.my.id/api/tools/chat/history?key=${widget.sessionKey}&session=$sessionId'));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['valid'] == true) {
+          setState(() {
+            _currentSessionId = sessionId;
+            _messages.clear();
+            final chatHistory = data['chatHistory'] as List;
+            for (var message in chatHistory) {
+              // Perubahan: menggunakan flag isAI untuk menentukan apakah pesan dari AI
+              _messages.add(ChatMessage(
+                  text: message['message'],
+                  isAI: message['isAI'] == true, // Menggunakan flag isAI
+                  timestamp: DateTime.parse(message['timestamp'])
+              ));
+            }
+            _showSessionList = false;
+          });
+        }
+      }
+    } catch (e) {
+      _showSnackBar('Failed to load chat session', isError: true);
+    }
+  }
+
+  Future<void> _deleteChatSession(String sessionId) async {
+    try {
+      final response = await http.get(Uri.parse('https://tapops.fanzhosting.my.id/api/tools/chat/delete?key=${widget.sessionKey}&session=$sessionId'));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['valid'] == true) {
+          _showSnackBar('Chat session deleted');
+          _loadChatSessions();
+          if (_currentSessionId == sessionId) {
+            setState(() {
+              _currentSessionId = null;
+              _messages.clear();
+            });
+          }
+        }
+      }
+    } catch (e) {
+      _showSnackBar('Failed to delete chat session', isError: true);
+    }
+  }
+
+  Future<void> _sendMessage() async {
+    if (_messageController.text.isEmpty || _currentSessionId == null) return;
+    final userMessage = _messageController.text;
+    setState(() {
+      _messages.add(ChatMessage(text: userMessage, isAI: false, timestamp: DateTime.now()));
+      _isLoading = true;
+    });
+    _messageController.clear();
+    try {
+      // Menggunakan API nullxteam untuk konsistensi
+      final response = await http.get(Uri.parse('https://tapops.fanzhosting.my.id/api/tools/chat/send?key=${widget.sessionKey}&session=$_currentSessionId&message=${Uri.encodeComponent(userMessage)}'));
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        print(data['status']);
+        if (data['status'] == true) {
+          setState(() {
+            _messages.add(ChatMessage(text: data['data']['message'], isAI: true, timestamp: DateTime.now()));
+          });
+        } else {
+          _showSnackBar('Failed to get AI response', isError: true);
+        }
+      } else {
+        _showSnackBar('Failed to connect to AI service', isError: true);
+      }
+    } catch (e) {
+      _showSnackBar('Error: ${e.toString()}', isError: true);
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _showSnackBar(String message, {bool isError = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(message),
+      backgroundColor: isError ? Colors.red.shade900 : Colors.grey.shade800,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    ));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        title: const Text('Chat AI', style: TextStyle(color: Color(0xFF4ADE80))),
+        iconTheme: const IconThemeData(color: Color(0xFF4ADE80)),
+        actions: [
+          IconButton(icon: const Icon(Icons.history, color: Color(0xFF4ADE80)), onPressed: () => setState(() => _showSessionList = !_showSessionList)),
+          IconButton(icon: const Icon(Icons.add, color: Color(0xFF4ADE80)), onPressed: _createNewSession),
+        ],
+      ),
+      body: _showSessionList ? _buildSessionList() : _buildChatInterface(),
+    );
+  }
+
+  Widget _buildSessionList() {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              const Text('Chat Sessions', style: TextStyle(color: Color(0xFF4ADE80), fontSize: 18, fontWeight: FontWeight.bold)),
+              const Spacer(),
+              TextButton(onPressed: _createNewSession, child: const Text('New Session', style: TextStyle(color: Color(0xFF4ADE80)))),
+            ],
+          ),
+        ),
+        Expanded(
+          child: _chatSessions.isEmpty
+              ? const Center(child: Text('No chat sessions found', style: TextStyle(color: Color(0xFF4ADE80))))
+              : ListView.builder(
+            itemCount: _chatSessions.length,
+            itemBuilder: (context, index) {
+              final session = _chatSessions[index];
+              return ListTile(
+                title: Text(session.sessionId, style: const TextStyle(color: Color(0xFF4ADE80))),
+                subtitle: Text('${session.messageCount} messages', style: TextStyle(color: const Color(0xFF4ADE80).withOpacity(0.7))),
+                trailing: IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => _deleteChatSession(session.sessionId)),
+                onTap: () => _loadChatSession(session.sessionId),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildChatInterface() {
+    return Column(
+      children: [
+        Expanded(
+          child: _currentSessionId == null
+              ? const Center(child: Text('Create or select a session to start chatting', style: TextStyle(color: Color(0xFF4ADE80))))
+              : ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: _messages.length,
+            itemBuilder: (context, index) => _buildMessageBubble(_messages[index]),
+          ),
+        ),
+        if (_isLoading)
+          const Padding(
+            padding: EdgeInsets.all(16),
+            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+              SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Color(0xFF4ADE80), strokeWidth: 2)),
+              SizedBox(width: 16),
+              Text('AI is thinking...', style: TextStyle(color: Color(0xFF4ADE80))),
+            ]),
+          ),
+        _buildMessageInput(),
+      ],
+    );
+  }
+
+  Widget _buildMessageBubble(ChatMessage message) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        // Perubahan: menggunakan isAI untuk menentukan posisi pesan
+        mainAxisAlignment: !message.isAI ? MainAxisAlignment.end : MainAxisAlignment.start,
+        children: [
+          if (message.isAI) ...[
+            Container(padding: const EdgeInsets.all(8), decoration: const BoxDecoration(color: Color(0xFF4ADE80), shape: BoxShape.circle), child: const Icon(Icons.smart_toy, color: Colors.black, size: 16)),
+            const SizedBox(width: 8),
+          ],
+          Flexible(
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                // Perubahan: menggunakan isAI untuk menentukan warna pesan
+                color: !message.isAI ? Color(0xFF4ADE80) : Colors.grey.shade800,
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(16),
+                  topRight: const Radius.circular(16),
+                  bottomLeft: !message.isAI ? const Radius.circular(16) : const Radius.circular(4),
+                  bottomRight: !message.isAI ? const Radius.circular(4) : const Radius.circular(16),
+                ),
+              ),
+              // Perubahan: menggunakan isAI untuk menentukan warna teks
+              child: Text(message.text, style: TextStyle(color: !message.isAI ? Colors.black : Color(0xFF4ADE80))),
+            ),
+          ),
+          if (!message.isAI) ...[
+            const SizedBox(width: 8),
+            Container(padding: const EdgeInsets.all(8), decoration: const BoxDecoration(color: Color(0xFF4ADE80), shape: BoxShape.circle), child: const Icon(Icons.person, color: Colors.black, size: 16)),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMessageInput() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: Colors.grey.shade900, border: Border(top: BorderSide(color: const Color(0xFF4ADE80).withOpacity(0.3), width: 1))),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _messageController,
+              style: const TextStyle(color: Color(0xFF4ADE80)),
+              decoration: InputDecoration(
+                hintText: 'Type your message...',
+                hintStyle: TextStyle(color: const Color(0xFF4ADE80).withOpacity(0.5)),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide(color: const Color(0xFF4ADE80).withOpacity(0.3))
+                ),
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: BorderSide(color: const Color(0xFF4ADE80).withOpacity(0.3))
+                ),
+                focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    borderSide: const BorderSide(color: Color(0xFF4ADE80))
+                ),
+                filled: true,
+                fillColor: Colors.grey.shade800,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            decoration: const BoxDecoration(color: Color(0xFF4ADE80), shape: BoxShape.circle),
+            child: IconButton(icon: const Icon(Icons.send, color: Colors.black), onPressed: _isLoading ? null : _sendMessage),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// Perubahan: memperbarui ChatMessage class untuk menggunakan isAI
+class ChatMessage {
+  final String text;
+  final bool isAI; // Mengubah dari isUser ke isAI untuk konsistensi dengan backend
+  final DateTime timestamp;
+  ChatMessage({required this.text, required this.isAI, required this.timestamp});
+}
+
+class ChatSession {
+  final String sessionId;
+  final String username;
+  final DateTime lastModified;
+  final int messageCount;
+  final String preview;
+  ChatSession({required this.sessionId, required this.username, required this.lastModified, required this.messageCount, required this.preview});
+  factory ChatSession.fromJson(Map<String, dynamic> json) {
+    return ChatSession(
+      sessionId: json['sessionId'],
+      username: json['username'],
+      lastModified: DateTime.parse(json['lastModified']),
+      messageCount: json['messageCount'],
+      preview: json['preview'],
+    );
+  }
+}

