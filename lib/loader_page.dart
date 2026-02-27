@@ -369,10 +369,10 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // User Welcome Section
-
-            // News Carousel
-            _buildNewsCarousel(),
             _buildWelcomeSection(),
+
+            // News Carousel (thumbnail below username card)
+            _buildNewsCarousel(),
 
             // Quick Actions Grid
             _buildQuickActionsGrid(),
@@ -652,103 +652,186 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   Widget _buildWelcomeSection() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(10),
-      margin: const EdgeInsets.all(16),
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(24),
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF4ADE80).withOpacity(0.2),
-            const Color(0xFF4ADE80).withOpacity(0.05),
+            const Color(0xFF0D2318),
+            const Color(0xFF0A1A10),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         border: Border.all(
-          color: const Color(0xFF4ADE80).withOpacity(0.2),
-          width: 1,
+          color: const Color(0xFF4ADE80).withOpacity(0.35),
+          width: 1.2,
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: const Color(0xFF4ADE80).withOpacity(0.2),
-                radius: 30,
-                child: const Icon(
-                  Icons.person,
-                  color: Color(0xFF4ADE80),
-                  size: 30,
-                ),
-              ),
-              const SizedBox(width: 15),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      "Welcome back,",
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
-                        fontSize: 14,
-                        fontFamily: "ShareTechMono",
-                      ),
-                    ),
-                    Text(
-                      username,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: "Orbitron",
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
-                decoration: BoxDecoration(
-                  color: _getRoleColor().withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: _getRoleColor().withOpacity(0.5),
-                    width: 1,
-                  ),
-                ),
-                child: Text(
-                  role.toUpperCase(),
-                  style: TextStyle(
-                    color: _getRoleColor(),
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 15),
-          Row(
-            children: [
-              Icon(
-                Icons.date_range,
-                color: const Color(0xFF4ADE80).withOpacity(0.7),
-                size: 16,
-              ),
-              const SizedBox(width: 5),
-              Text(
-                "Account expires: $expiredDate",
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
-                  fontSize: 14,
-                  fontFamily: "ShareTechMono",
-                ),
-              ),
-            ],
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF4ADE80).withOpacity(0.12),
+            blurRadius: 24,
+            spreadRadius: 0,
+            offset: const Offset(0, 4),
           ),
         ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Stack(
+          children: [
+            // Subtle corner glow
+            Positioned(
+              top: -30,
+              right: -30,
+              child: Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF4ADE80).withOpacity(0.06),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      // Avatar with neon ring
+                      Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: [
+                              const Color(0xFF4ADE80),
+                              const Color(0xFF22C55E).withOpacity(0.4),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                        child: CircleAvatar(
+                          backgroundColor: const Color(0xFF0D2318),
+                          radius: 28,
+                          child: Text(
+                            username.isNotEmpty ? username[0].toUpperCase() : "?",
+                            style: const TextStyle(
+                              color: Color(0xFF4ADE80),
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: "Orbitron",
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Welcome back,",
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.5),
+                                fontSize: 12,
+                                fontFamily: "ShareTechMono",
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              username,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: "Orbitron",
+                                letterSpacing: 0.5,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Role badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                        decoration: BoxDecoration(
+                          color: _getRoleColor().withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(30),
+                          border: Border.all(
+                            color: _getRoleColor().withOpacity(0.6),
+                            width: 1,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: _getRoleColor().withOpacity(0.2),
+                              blurRadius: 8,
+                              spreadRadius: 0,
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          role.toUpperCase(),
+                          style: TextStyle(
+                            color: _getRoleColor(),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  // Divider
+                  Container(
+                    height: 1,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          const Color(0xFF4ADE80).withOpacity(0.4),
+                          Colors.transparent,
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(7),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF4ADE80).withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          Icons.access_time_rounded,
+                          color: const Color(0xFF4ADE80).withOpacity(0.9),
+                          size: 15,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        "Expires: $expiredDate",
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.65),
+                          fontSize: 13,
+                          fontFamily: "ShareTechMono",
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -767,162 +850,262 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   }
 
   Widget _buildNewsCarousel() {
-    if (newsList.isEmpty) {
-      return Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16),
-        height: 180,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          color: Colors.black.withOpacity(0.3),
-          border: Border.all(
-            color: const Color(0xFF4ADE80).withOpacity(0.2),
-            width: 1,
-          ),
-        ),
-        child: const Center(
-          child: Text(
-            "No news available",
-            style: TextStyle(
-              color: Colors.white54,
-              fontFamily: "ShareTechMono",
-            ),
-          ),
-        ),
-      );
-    }
-
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        SizedBox(
-          height: 200,
-          child: PageView.builder(
-            controller: _pageController,
-            itemCount: newsList.length,
-            onPageChanged: (index) {
-              setState(() {
-                _currentNewsIndex = index;
-              });
-            },
-            itemBuilder: (context, index) {
-              final item = newsList[index];
-              return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
+          child: Row(
+            children: [
+              Container(
+                width: 4,
+                height: 18,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  color: Colors.white.withOpacity(0.1),
+                  color: const Color(0xFF4ADE80),
+                  borderRadius: BorderRadius.circular(2),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF4ADE80).withOpacity(0.1),
-                      blurRadius: 15,
-                      spreadRadius: 2,
+                      color: const Color(0xFF4ADE80).withOpacity(0.6),
+                      blurRadius: 6,
                     ),
                   ],
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      if (item['image'] != null && item['image'].toString().isNotEmpty)
-                        NewsMedia(url: item['image']),
-                      Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.black.withOpacity(0.7),
-                              Colors.transparent
-                            ],
-                            begin: Alignment.bottomCenter,
-                            end: Alignment.topCenter,
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 16,
-                        left: 16,
-                        right: 16,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              item['title'] ?? 'No Title',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontFamily: "Orbitron",
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              item['desc'] ?? '',
-                              style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontFamily: "ShareTechMono"),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                "Latest Updates",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: "Orbitron",
+                  letterSpacing: 0.5,
                 ),
-              );
-            },
+              ),
+            ],
           ),
         ),
-        if (newsList.length > 1)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(
-              newsList.length,
-                  (index) => AnimatedContainer(
-                duration: const Duration(milliseconds: 300),
-                margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                height: 8,
-                width: _currentNewsIndex == index ? 24 : 8,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
-                  color: _currentNewsIndex == index
-                      ? const Color(0xFF4ADE80)
-                      : Colors.white.withOpacity(0.3),
+        if (newsList.isEmpty)
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            height: 160,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              color: Colors.white.withOpacity(0.03),
+              border: Border.all(
+                color: const Color(0xFF4ADE80).withOpacity(0.15),
+                width: 1,
+              ),
+            ),
+            child: const Center(
+              child: Text(
+                "No news available",
+                style: TextStyle(
+                  color: Colors.white38,
+                  fontFamily: "ShareTechMono",
                 ),
               ),
             ),
+          )
+        else ...[
+          SizedBox(
+            height: 210,
+            child: PageView.builder(
+              controller: _pageController,
+              itemCount: newsList.length,
+              onPageChanged: (index) {
+                setState(() {
+                  _currentNewsIndex = index;
+                });
+              },
+              itemBuilder: (context, index) {
+                final item = newsList[index];
+                return Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(22),
+                    color: const Color(0xFF0A1A10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF4ADE80).withOpacity(0.15),
+                        blurRadius: 20,
+                        spreadRadius: 0,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                    border: Border.all(
+                      color: const Color(0xFF4ADE80).withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(22),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        if (item['image'] != null && item['image'].toString().isNotEmpty)
+                          NewsMedia(url: item['image']),
+                        // Bottom gradient overlay
+                        Positioned.fill(
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.black.withOpacity(0.85),
+                                  Colors.black.withOpacity(0.3),
+                                  Colors.transparent,
+                                ],
+                                begin: Alignment.bottomCenter,
+                                end: Alignment.topCenter,
+                                stops: const [0.0, 0.5, 1.0],
+                              ),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 16,
+                          left: 16,
+                          right: 16,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                margin: const EdgeInsets.only(bottom: 8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF4ADE80).withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
+                                    color: const Color(0xFF4ADE80).withOpacity(0.4),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: const Text(
+                                  "NEWS",
+                                  style: TextStyle(
+                                    color: Color(0xFF4ADE80),
+                                    fontSize: 10,
+                                    fontFamily: "Orbitron",
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 2,
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                item['title'] ?? 'No Title',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 17,
+                                  fontFamily: "Orbitron",
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.3,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                item['desc'] ?? '',
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.65),
+                                  fontFamily: "ShareTechMono",
+                                  fontSize: 12,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
+          if (newsList.length > 1)
+            Padding(
+              padding: const EdgeInsets.only(top: 10, bottom: 4),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: List.generate(
+                  newsList.length,
+                  (index) => AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    margin: const EdgeInsets.symmetric(horizontal: 3),
+                    height: 6,
+                    width: _currentNewsIndex == index ? 22 : 6,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(6),
+                      color: _currentNewsIndex == index
+                          ? const Color(0xFF4ADE80)
+                          : Colors.white.withOpacity(0.2),
+                      boxShadow: _currentNewsIndex == index
+                          ? [
+                              BoxShadow(
+                                color: const Color(0xFF4ADE80).withOpacity(0.5),
+                                blurRadius: 6,
+                              ),
+                            ]
+                          : [],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ],
     );
   }
 
   Widget _buildQuickActionsGrid() {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "Quick Actions",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              fontFamily: "Orbitron",
-            ),
+          Row(
+            children: [
+              Container(
+                width: 4,
+                height: 18,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4ADE80),
+                  borderRadius: BorderRadius.circular(2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF4ADE80).withOpacity(0.6),
+                      blurRadius: 6,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                "Quick Actions",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: "Orbitron",
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 15),
+          const SizedBox(height: 14),
           GridView.count(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
             crossAxisCount: 2,
-            crossAxisSpacing: 15,
-            mainAxisSpacing: 15,
-            childAspectRatio: 1.2,
+            crossAxisSpacing: 14,
+            mainAxisSpacing: 14,
+            childAspectRatio: 1.25,
             children: [
               _buildActionCard(
                 icon: FontAwesomeIcons.telegram,
                 title: "Join Channel",
                 subtitle: "Get updates",
+                color: const Color(0xFF229ED9),
                 onTap: () async {
                   final uri = Uri.parse("tg://resolve?domain=aphelionlabs");
                   if (await canLaunchUrl(uri)) {
@@ -937,6 +1120,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                 icon: Icons.phone_android,
                 title: "Manage Senders",
                 subtitle: "Configure devices",
+                color: const Color(0xFF4ADE80),
                 onTap: () {
                   setState(() {
                     _selectedPage = SenderPage(sessionKey: sessionKey);
@@ -955,44 +1139,67 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     required String title,
     required String subtitle,
     required VoidCallback onTap,
+    Color color = const Color(0xFF4ADE80),
   }) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
-          color: Colors.black.withOpacity(0.3),
+          gradient: LinearGradient(
+            colors: [
+              color.withOpacity(0.15),
+              color.withOpacity(0.04),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
           border: Border.all(
-            color: const Color(0xFF4ADE80).withOpacity(0.2),
+            color: color.withOpacity(0.3),
             width: 1,
           ),
+          boxShadow: [
+            BoxShadow(
+              color: color.withOpacity(0.08),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              color: const Color(0xFF4ADE80),
-              size: 30,
-            ),
-            const SizedBox(height: 10),
-            Text(
-              title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
+                color: color,
+                size: 22,
               ),
             ),
-            const SizedBox(height: 5),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 0.3,
+              ),
+            ),
+            const SizedBox(height: 4),
             Text(
               subtitle,
               style: TextStyle(
-                color: Colors.white.withOpacity(0.7),
-                fontSize: 12,
+                color: Colors.white.withOpacity(0.5),
+                fontSize: 11,
               ),
             ),
           ],
@@ -1003,20 +1210,40 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
 
   Widget _buildStatisticsCards() {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            "Statistics",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              fontFamily: "Orbitron",
-            ),
+          Row(
+            children: [
+              Container(
+                width: 4,
+                height: 18,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF4ADE80),
+                  borderRadius: BorderRadius.circular(2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF4ADE80).withOpacity(0.6),
+                      blurRadius: 6,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Text(
+                "Statistics",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: "Orbitron",
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 15),
+          const SizedBox(height: 14),
           Row(
             children: [
               Expanded(
@@ -1075,40 +1302,62 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        color: Colors.black.withOpacity(0.3),
+        gradient: LinearGradient(
+          colors: [
+            color.withOpacity(0.12),
+            Colors.black.withOpacity(0.3),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         border: Border.all(
           color: color.withOpacity(0.3),
           width: 1,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.1),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(
-                icon,
-                color: color,
-                size: 20,
+              Container(
+                padding: const EdgeInsets.all(7),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(
+                  icon,
+                  color: color,
+                  size: 18,
+                ),
               ),
               const Spacer(),
               Text(
                 value,
                 style: TextStyle(
                   color: color,
-                  fontSize: 24,
+                  fontSize: 26,
                   fontWeight: FontWeight.bold,
                   fontFamily: "Orbitron",
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           Text(
             title,
             style: TextStyle(
-              color: Colors.white.withOpacity(0.7),
-              fontSize: 14,
+              color: Colors.white.withOpacity(0.6),
+              fontSize: 12,
+              letterSpacing: 0.3,
             ),
           ),
         ],
@@ -1118,40 +1367,72 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
 
   Widget _buildRecentActivity() {
     return Padding(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                "Recent Activity",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: "Orbitron",
-                ),
+              Row(
+                children: [
+                  Container(
+                    width: 4,
+                    height: 18,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4ADE80),
+                      borderRadius: BorderRadius.circular(2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFF4ADE80).withOpacity(0.6),
+                          blurRadius: 6,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  const Text(
+                    "Recent Activity",
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: "Orbitron",
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
               ),
               TextButton(
                 onPressed: () {
                   setState(() {
-                    _selectedIndex = 4; // Activity logs tab index
+                    _selectedIndex = 4;
                     _selectedPage = _buildActivityLogsPage();
                   });
                 },
+                style: TextButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  backgroundColor: const Color(0xFF4ADE80).withOpacity(0.1),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                    side: BorderSide(
+                      color: const Color(0xFF4ADE80).withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                ),
                 child: const Text(
                   "View All",
                   style: TextStyle(
                     color: Color(0xFF4ADE80),
-                    fontSize: 14,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 15),
+          const SizedBox(height: 14),
           if (_isLoadingActivityLogs)
             Container(
               height: 120,
