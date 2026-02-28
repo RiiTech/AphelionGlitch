@@ -537,17 +537,10 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        gradient: LinearGradient(
-          colors: [
-            const Color(0xFF1D4ED8).withOpacity(0.35),
-            const Color(0xFF60A5FA).withOpacity(0.15),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: const Color(0xFF1A2235),
         border: Border.all(
-          color: const Color(0xFF1D4ED8).withOpacity(0.6),
-          width: 1.5,
+          color: const Color(0xFF1F2937),
+          width: 1,
         ),
       ),
       child: Column(
@@ -556,7 +549,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
           Row(
             children: [
               CircleAvatar(
-                backgroundColor: const Color(0xFF1D4ED8).withOpacity(0.25),
+                backgroundColor: const Color(0xFF1E40AF),
                 radius: 30,
                 child: const Icon(Icons.person, color: Color(0xFF60A5FA), size: 30),
               ),
@@ -565,10 +558,10 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       "Welcome back,",
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
+                        color: Color(0xFF9CA3AF),
                         fontSize: 14,
                         fontFamily: "ShareTechMono",
                       ),
@@ -588,9 +581,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
                 decoration: BoxDecoration(
-                  color: _getRoleColor().withOpacity(0.2),
+                  color: const Color(0xFF111827),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: _getRoleColor().withOpacity(0.5), width: 1),
+                  border: Border.all(color: const Color(0xFF1F2937), width: 1),
                 ),
                 child: Text(
                   role.toUpperCase(),
@@ -606,12 +599,12 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
           const SizedBox(height: 15),
           Row(
             children: [
-              Icon(Icons.date_range, color: const Color(0xFF60A5FA).withOpacity(0.7), size: 16),
+              const Icon(Icons.date_range, color: Color(0xFF9CA3AF), size: 16),
               const SizedBox(width: 5),
               Text(
                 "Account expires: $expiredDate",
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
+                style: const TextStyle(
+                  color: Color(0xFF9CA3AF),
                   fontSize: 14,
                   fontFamily: "ShareTechMono",
                 ),
