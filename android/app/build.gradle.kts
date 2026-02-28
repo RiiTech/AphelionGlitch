@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.nullx.ppl"
-    compileSdk = 35
+    compileSdk = 36
     ndkVersion = "27.0.12077973"
 
     compileOptions {
@@ -22,7 +22,7 @@ android {
     defaultConfig {
         applicationId = "com.nullx.ppl"
         minSdk = 23                         // ✅ ganti di sini
-        targetSdk = 35
+        targetSdk = 36
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
@@ -39,3 +39,4 @@ android {
 flutter {
     source = "../.."
 }
+
