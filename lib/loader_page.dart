@@ -210,8 +210,6 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
       } else if (index == 1) {
         _selectedPage = ToolsPage(sessionKey: sessionKey, userRole: role);
       } else if (index == 2) {
-        _selectedPage = AttackPanel(sessionKey: sessionKey, listDDoS: listDDoS);
-      } else if (index == 3) {
         Future.microtask(() => _showAccountMenu());
       }
     });
@@ -532,7 +530,6 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     return 'Just now';
   }
 
-  // ✅ FIXED: _buildWelcomeSection dengan struktur lengkap dan benar
   Widget _buildWelcomeSection() {
     return Container(
       width: double.infinity,
@@ -542,15 +539,15 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         borderRadius: BorderRadius.circular(16),
         gradient: LinearGradient(
           colors: [
-            const Color(0xFF1E88E5).withOpacity(0.2),
-            const Color(0xFF1E88E5).withOpacity(0.05),
+            const Color(0xFF29B6F6).withOpacity(0.35),
+            const Color(0xFF4FC3F7).withOpacity(0.15),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         border: Border.all(
-          color: const Color(0xFF1E88E5).withOpacity(0.2),
-          width: 1,
+          color: const Color(0xFF29B6F6).withOpacity(0.6),
+          width: 1.5,
         ),
       ),
       child: Column(
@@ -559,9 +556,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
           Row(
             children: [
               CircleAvatar(
-                backgroundColor: const Color(0xFF1E88E5).withOpacity(0.2),
+                backgroundColor: const Color(0xFF29B6F6).withOpacity(0.25),
                 radius: 30,
-                child: const Icon(Icons.person, color: Color(0xFF1E88E5), size: 30),
+                child: const Icon(Icons.person, color: Color(0xFF4FC3F7), size: 30),
               ),
               const SizedBox(width: 15),
               Expanded(
@@ -579,7 +576,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                     Text(
                       username,
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: Color(0xFF4FC3F7),
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         fontFamily: "Orbitron",
@@ -609,7 +606,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
           const SizedBox(height: 15),
           Row(
             children: [
-              Icon(Icons.date_range, color: const Color(0xFF1E88E5).withOpacity(0.7), size: 16),
+              Icon(Icons.date_range, color: const Color(0xFF4FC3F7).withOpacity(0.7), size: 16),
               const SizedBox(width: 5),
               Text(
                 "Account expires: $expiredDate",
@@ -1153,20 +1150,18 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     return Image.asset('assets/images/title.png', height: height, fit: BoxFit.contain);
   }
 
-  // ✅ Navbar: Home, Tools, DDoS, Profile
+  // ✅ Navbar: Home, Tools, Profile
   List<BottomNavigationBarItem> _buildBottomNavBarItems() {
     return [
-      BottomNavigationBarItem(
-        icon: Image.asset('assets/images/home.png', width: 50, height: 50),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.home_outlined, size: 32),
+        activeIcon: Icon(Icons.home, size: 32),
         label: "Home",
       ),
-      BottomNavigationBarItem(
-        icon: Image.asset('assets/images/tools.png', width: 50, height: 50),
+      const BottomNavigationBarItem(
+        icon: Icon(Icons.build_outlined, size: 32),
+        activeIcon: Icon(Icons.build, size: 32),
         label: "Tools",
-      ),
-      BottomNavigationBarItem(
-        icon: Image.asset('assets/images/ddos.png', width: 50, height: 50),
-        label: "DDoS",
       ),
       const BottomNavigationBarItem(
         icon: Icon(Icons.account_circle_outlined, size: 32),
@@ -1180,7 +1175,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
-      backgroundColor: const Color(0xFF0A1628),
+      backgroundColor: const Color(0xFF030A14),
       appBar: AppBar(
         title: _buildLogo(height: 40),
         backgroundColor: const Color(0xFF0D1B2A),
@@ -1271,7 +1266,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         ),
       ),
       body: Container(
-        decoration: const BoxDecoration(color: Color(0xFF0A1628)),
+        decoration: const BoxDecoration(color: Color(0xFF030A14)),
         child: SafeArea(
           child: FadeTransition(opacity: _animation, child: _selectedPage),
         ),
