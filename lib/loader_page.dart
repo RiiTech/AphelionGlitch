@@ -537,10 +537,13 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
-        color: const Color(0xFF1A2235),
-        border: Border.all(
-          color: const Color(0xFF1F2937),
-          width: 1,
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFF1D4ED8),
+            Color(0xFF3B82F6),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
       ),
       child: Column(
