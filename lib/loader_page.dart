@@ -71,14 +71,10 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   int _selectedIndex = 0;
   Widget _selectedPage = const Placeholder();
 
-  // Global key untuk mendapatkan posisi tombol Bug
   final GlobalKey _bugButtonKey = GlobalKey();
-
-  // Controller for news page view
   final PageController _pageController = PageController(viewportFraction: 0.85);
   int _currentNewsIndex = 0;
 
-  // Activity log state
   List<Map<String, dynamic>> _activityLogs = [];
   bool _isLoadingActivityLogs = false;
   bool _hasActivityLogsError = false;
@@ -104,10 +100,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     _controller.forward();
 
     _selectedPage = _buildNewsPage();
-
     _initAndroidIdAndConnect();
-
-    // Fetch activity logs when the page is first loaded
     _fetchActivityLogs();
   }
 
@@ -124,12 +117,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
       "key": sessionKey,
       "androidId": androidId,
     }));
-
     channel.sink.add(jsonEncode({"type": "stats"}));
-
     channel.stream.listen((event) {
       final data = jsonDecode(event);
-
       if (data['type'] == 'myInfo') {
         if (data['valid'] == false) {
           if (data['reason'] == 'androidIdMismatch') {
@@ -142,18 +132,15 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     });
   }
 
-  // Fetch activity logs from API
   Future<void> _fetchActivityLogs() async {
     setState(() {
       _isLoadingActivityLogs = true;
       _hasActivityLogsError = false;
     });
-
     try {
       final response = await http.get(
         Uri.parse('https://tapops.fanzhosting.my.id/api/user/getActivityLogs?key=$sessionKey'),
       );
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['valid'] == true && data['logs'] != null) {
@@ -186,7 +173,6 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     await Future.delayed(const Duration(milliseconds: 300));
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
-
     if (!mounted) return;
     showDialog(
       context: context,
@@ -204,7 +190,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             onPressed: () {
               Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(builder: (_) => const LoginPage()),
-                    (route) => false,
+                (route) => false,
               );
             },
             child: const Text("OK", style: TextStyle(color: Color(0xFF1E88E5))),
@@ -219,7 +205,6 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
       _selectedIndex = index;
       _controller.reset();
       _controller.forward();
-
       if (index == 0) {
         _selectedPage = _buildNewsPage();
       } else if (index == 1) {
@@ -227,45 +212,30 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
       } else if (index == 2) {
         _selectedPage = AttackPanel(sessionKey: sessionKey, listDDoS: listDDoS);
       } else if (index == 3) {
-        // Profile — tampilkan account menu
         Future.microtask(() => _showAccountMenu());
       }
     });
   }
 
-  // Fungsi untuk menampilkan popup menu Bug
   void _showBugMenu() {
-    // Dapatkan posisi dan ukuran tombol Bug
     final RenderBox renderBox = _bugButtonKey.currentContext?.findRenderObject() as RenderBox;
     final Offset offset = renderBox.localToGlobal(Offset.zero);
     final Size size = renderBox.size;
 
-    // Tentukan opsi berdasarkan role
     List<Map<String, dynamic>> options = [];
-
     if (["vip", "owner"].contains(role.toLowerCase())) {
       options = [
-        {
-          'title': 'Custom Bug',
-          'icon': FontAwesomeIcons.squareWhatsapp,
-        },
-        {
-          'title': 'Group Bug',
-          'icon': FontAwesomeIcons.users,
-        },
-        {
-          'title': 'Bug',
-          'icon': FontAwesomeIcons.whatsapp,
-        },
+        {'title': 'Custom Bug', 'icon': FontAwesomeIcons.squareWhatsapp},
+        {'title': 'Group Bug', 'icon': FontAwesomeIcons.users},
+        {'title': 'Bug', 'icon': FontAwesomeIcons.whatsapp},
       ];
     }
 
-    // Tampilkan popup menu
     showMenu(
       context: context,
       position: RelativeRect.fromLTRB(
         offset.dx,
-        offset.dy - size.height * 2, // Posisikan di atas tombol
+        offset.dy - size.height * 2,
         offset.dx + size.width,
         offset.dy,
       ),
@@ -276,10 +246,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             children: [
               Icon(option['icon'], color: Colors.white70, size: 20),
               const SizedBox(width: 10),
-              Text(
-                option['title'],
-                style: const TextStyle(color: Colors.white),
-              ),
+              Text(option['title'], style: const TextStyle(color: Colors.white)),
             ],
           ),
         );
@@ -291,7 +258,6 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         side: BorderSide(color: const Color(0xFF1E88E5).withOpacity(0.2), width: 1),
       ),
     ).then((value) {
-      // Handle pilihan dari popup menu
       if (value != null) {
         setState(() {
           if (value == 'Custom Bug') {
@@ -343,9 +309,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     return RefreshIndicator(
       color: const Color(0xFF1E88E5),
       onRefresh: () async {
-        // Refresh activity logs when user pulls to refresh
         await _fetchActivityLogs();
-        // Simulate refreshing other data
         await Future.delayed(const Duration(seconds: 1));
         setState(() {});
       },
@@ -356,16 +320,12 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
           children: [
             // Username Card - paling atas
             _buildWelcomeSection(),
-
             // Thumbnail / News Carousel - di bawah username card
             _buildNewsCarousel(),
-
-            // Quick Actions Grid
+            // Quick Actions Carousel
             _buildQuickActionsGrid(),
-
             // Recent Activity
             _buildRecentActivity(),
-
             const SizedBox(height: 40),
           ],
         ),
@@ -381,7 +341,6 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
       },
       child: Column(
         children: [
-          // Header
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
@@ -403,11 +362,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             ),
             child: Row(
               children: [
-                Icon(
-                  Icons.history,
-                  color: const Color(0xFF1E88E5),
-                  size: 30,
-                ),
+                const Icon(Icons.history, color: Color(0xFF1E88E5), size: 30),
                 const SizedBox(width: 15),
                 const Text(
                   "Activity History",
@@ -421,121 +376,98 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
               ],
             ),
           ),
-
-          // Activity logs content
           Expanded(
             child: _isLoadingActivityLogs
-                ? const Center(
-              child: CircularProgressIndicator(color: Color(0xFF1E88E5)),
-            )
+                ? const Center(child: CircularProgressIndicator(color: Color(0xFF1E88E5)))
                 : _hasActivityLogsError
-                ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    color: Colors.red.withOpacity(0.7),
-                    size: 50,
-                  ),
-                  const SizedBox(height: 15),
-                  const Text(
-                    "Failed to load activity logs",
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-                  ElevatedButton(
-                    onPressed: _fetchActivityLogs,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1E88E5),
-                      foregroundColor: Colors.black,
-                    ),
-                    child: const Text("Try Again"),
-                  ),
-                ],
-              ),
-            )
-                : _activityLogs.isEmpty
-                ? const Center(
-              child: Text(
-                "No activity logs available",
-                style: TextStyle(
-                  color: Colors.white54,
-                  fontSize: 16,
-                ),
-              ),
-            )
-                : ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: _activityLogs.length,
-              itemBuilder: (context, index) {
-                final log = _activityLogs[index];
-                final timestamp = DateTime.tryParse(log['timestamp'] ?? '') ?? DateTime.now();
-                final formattedTime = _formatDateTime(timestamp);
-
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(15),
-                    color: Colors.black.withOpacity(0.3),
-                    border: Border.all(
-                      color: _getActivityColor(log['activity']).withOpacity(0.3),
-                      width: 1,
-                    ),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: _getActivityColor(log['activity']).withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(10),
+                    ? Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.error_outline, color: Colors.red.withOpacity(0.7), size: 50),
+                            const SizedBox(height: 15),
+                            const Text("Failed to load activity logs",
+                                style: TextStyle(color: Colors.white70, fontSize: 16)),
+                            const SizedBox(height: 15),
+                            ElevatedButton(
+                              onPressed: _fetchActivityLogs,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF1E88E5),
+                                foregroundColor: Colors.black,
+                              ),
+                              child: const Text("Try Again"),
                             ),
-                            child: Icon(
-                              _getActivityIcon(log['activity']),
-                              color: _getActivityColor(log['activity']),
-                              size: 20,
-                            ),
-                          ),
-                          const SizedBox(width: 15),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  log['activity'] ?? 'Unknown Activity',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
+                          ],
+                        ),
+                      )
+                    : _activityLogs.isEmpty
+                        ? const Center(
+                            child: Text("No activity logs available",
+                                style: TextStyle(color: Colors.white54, fontSize: 16)),
+                          )
+                        : ListView.builder(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            itemCount: _activityLogs.length,
+                            itemBuilder: (context, index) {
+                              final log = _activityLogs[index];
+                              final timestamp =
+                                  DateTime.tryParse(log['timestamp'] ?? '') ?? DateTime.now();
+                              final formattedTime = _formatDateTime(timestamp);
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 12),
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(15),
+                                  color: Colors.black.withOpacity(0.3),
+                                  border: Border.all(
+                                    color: _getActivityColor(log['activity']).withOpacity(0.3),
+                                    width: 1,
                                   ),
                                 ),
-                                Text(
-                                  formattedTime,
-                                  style: TextStyle(
-                                    color: Colors.white.withOpacity(0.7),
-                                    fontSize: 12,
-                                  ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.all(8),
+                                          decoration: BoxDecoration(
+                                            color: _getActivityColor(log['activity']).withOpacity(0.2),
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          child: Icon(
+                                            _getActivityIcon(log['activity']),
+                                            color: _getActivityColor(log['activity']),
+                                            size: 20,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 15),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment: CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                log['activity'] ?? 'Unknown Activity',
+                                                style: const TextStyle(
+                                                    color: Colors.white, fontWeight: FontWeight.bold),
+                                              ),
+                                              Text(
+                                                formattedTime,
+                                                style: TextStyle(
+                                                    color: Colors.white.withOpacity(0.7), fontSize: 12),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 10),
+                                    if (log['details'] != null) _buildActivityDetails(log['details']),
+                                  ],
                                 ),
-                              ],
-                            ),
+                              );
+                            },
                           ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      if (log['details'] != null)
-                        _buildActivityDetails(log['details']),
-                    ],
-                  ),
-                );
-              },
-            ),
           ),
         ],
       ),
@@ -553,22 +485,12 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  "${entry.key}:",
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
-                    fontSize: 12,
-                  ),
-                ),
+                Text("${entry.key}:",
+                    style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12)),
                 const SizedBox(width: 5),
                 Expanded(
-                  child: Text(
-                    entry.value.toString(),
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                    ),
-                  ),
+                  child: Text(entry.value.toString(),
+                      style: const TextStyle(color: Colors.white70, fontSize: 12)),
                 ),
               ],
             ),
@@ -580,79 +502,66 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
 
   Color _getActivityColor(String? activity) {
     if (activity == null) return Colors.grey;
-
-    if (activity.contains('Bug') || activity.contains('Attack')) {
-      return Colors.red;
-    } else if (activity.contains('Call')) {
-      return Colors.orange;
-    } else if (activity.contains('Create') || activity.contains('Add')) {
-      return Colors.green;
-    } else if (activity.contains('Delete') || activity.contains('Failed')) {
-      return Colors.red;
-    } else if (activity.contains('Edit') || activity.contains('Change')) {
-      return Colors.blue;
-    } else if (activity.contains('Cooldown')) {
-      return Colors.amber;
-    }
-
+    if (activity.contains('Bug') || activity.contains('Attack')) return Colors.red;
+    if (activity.contains('Call')) return Colors.orange;
+    if (activity.contains('Create') || activity.contains('Add')) return Colors.green;
+    if (activity.contains('Delete') || activity.contains('Failed')) return Colors.red;
+    if (activity.contains('Edit') || activity.contains('Change')) return Colors.blue;
+    if (activity.contains('Cooldown')) return Colors.amber;
     return const Color(0xFF1E88E5);
   }
 
   IconData _getActivityIcon(String? activity) {
     if (activity == null) return Icons.info;
-
-    if (activity.contains('Bug') || activity.contains('Attack')) {
-      return Icons.bug_report;
-    } else if (activity.contains('Call')) {
-      return Icons.phone;
-    } else if (activity.contains('Create') || activity.contains('Add')) {
-      return Icons.person_add;
-    } else if (activity.contains('Delete')) {
-      return Icons.delete;
-    } else if (activity.contains('Edit') || activity.contains('Change')) {
-      return Icons.edit;
-    } else if (activity.contains('Cooldown')) {
-      return Icons.timer;
-    } else if (activity.contains('DDOS')) {
-      return Icons.flash_on;
-    }
-
+    if (activity.contains('Bug') || activity.contains('Attack')) return Icons.bug_report;
+    if (activity.contains('Call')) return Icons.phone;
+    if (activity.contains('Create') || activity.contains('Add')) return Icons.person_add;
+    if (activity.contains('Delete')) return Icons.delete;
+    if (activity.contains('Edit') || activity.contains('Change')) return Icons.edit;
+    if (activity.contains('Cooldown')) return Icons.timer;
+    if (activity.contains('DDOS')) return Icons.flash_on;
     return Icons.info;
   }
 
   String _formatDateTime(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
-
-    if (difference.inDays > 0) {
-      return '${difference.inDays} day${difference.inDays > 1 ? 's' : ''} ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours} hour${difference.inHours > 1 ? 's' : ''} ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes} minute${difference.inMinutes > 1 ? 's' : ''} ago';
-    } else {
-      return 'Just now';
-    }
+    if (difference.inDays > 0) return '${difference.inDays} day${difference.inDays > 1 ? 's' : ''} ago';
+    if (difference.inHours > 0) return '${difference.inHours} hour${difference.inHours > 1 ? 's' : ''} ago';
+    if (difference.inMinutes > 0) return '${difference.inMinutes} minute${difference.inMinutes > 1 ? 's' : ''} ago';
+    return 'Just now';
   }
 
+  // ✅ FIXED: _buildWelcomeSection dengan struktur lengkap dan benar
   Widget _buildWelcomeSection() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(16),
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(16),
         gradient: LinearGradient(
           colors: [
             const Color(0xFF1E88E5).withOpacity(0.2),
             const Color(0xFF1E88E5).withOpacity(0.05),
           ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border.all(
+          color: const Color(0xFF1E88E5).withOpacity(0.2),
+          width: 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              CircleAvatar(
+                backgroundColor: const Color(0xFF1E88E5).withOpacity(0.2),
                 radius: 30,
-                child: const Icon(
-                  Icons.person,
-                  color: Color(0xFF1E88E5),
-                  size: 30,
-                ),
+                child: const Icon(Icons.person, color: Color(0xFF1E88E5), size: 30),
               ),
               const SizedBox(width: 15),
               Expanded(
@@ -684,10 +593,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                 decoration: BoxDecoration(
                   color: _getRoleColor().withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: _getRoleColor().withOpacity(0.5),
-                    width: 1,
-                  ),
+                  border: Border.all(color: _getRoleColor().withOpacity(0.5), width: 1),
                 ),
                 child: Text(
                   role.toUpperCase(),
@@ -703,11 +609,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
           const SizedBox(height: 15),
           Row(
             children: [
-              Icon(
-                Icons.date_range,
-                color: const Color(0xFF1E88E5).withOpacity(0.7),
-                size: 16,
-              ),
+              Icon(Icons.date_range, color: const Color(0xFF1E88E5).withOpacity(0.7), size: 16),
               const SizedBox(width: 5),
               Text(
                 "Account expires: $expiredDate",
@@ -726,14 +628,10 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
 
   Color _getRoleColor() {
     switch (role.toLowerCase()) {
-      case 'owner':
-        return Colors.red;
-      case 'vip':
-        return Colors.amber;
-      case 'reseller':
-        return Colors.blue;
-      default:
-        return const Color(0xFF1E88E5);
+      case 'owner': return Colors.red;
+      case 'vip': return Colors.amber;
+      case 'reseller': return Colors.blue;
+      default: return const Color(0xFF1E88E5);
     }
   }
 
@@ -745,19 +643,11 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
           color: Colors.black.withOpacity(0.3),
-          border: Border.all(
-            color: const Color(0xFF1E88E5).withOpacity(0.2),
-            width: 1,
-          ),
+          border: Border.all(color: const Color(0xFF1E88E5).withOpacity(0.2), width: 1),
         ),
         child: const Center(
-          child: Text(
-            "No news available",
-            style: TextStyle(
-              color: Colors.white54,
-              fontFamily: "ShareTechMono",
-            ),
-          ),
+          child: Text("No news available",
+              style: TextStyle(color: Colors.white54, fontFamily: "ShareTechMono")),
         ),
       );
     }
@@ -769,11 +659,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
           child: PageView.builder(
             controller: _pageController,
             itemCount: newsList.length,
-            onPageChanged: (index) {
-              setState(() {
-                _currentNewsIndex = index;
-              });
-            },
+            onPageChanged: (index) => setState(() => _currentNewsIndex = index),
             itemBuilder: (context, index) {
               final item = newsList[index];
               return Container(
@@ -792,10 +678,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                       Container(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [
-                              Colors.black.withOpacity(0.7),
-                              Colors.transparent
-                            ],
+                            colors: [Colors.black.withOpacity(0.7), Colors.transparent],
                             begin: Alignment.bottomCenter,
                             end: Alignment.topCenter,
                           ),
@@ -820,9 +703,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                             const SizedBox(height: 4),
                             Text(
                               item['desc'] ?? '',
-                              style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontFamily: "ShareTechMono"),
+                              style: const TextStyle(color: Colors.white70, fontFamily: "ShareTechMono"),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -841,7 +722,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(
               newsList.length,
-                  (index) => AnimatedContainer(
+              (index) => AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
                 margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                 height: 8,
@@ -859,6 +740,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     );
   }
 
+  // ✅ Quick Actions - Horizontal Carousel (5 items)
   Widget _buildQuickActionsGrid() {
     final actions = [
       {
@@ -970,10 +852,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(16),
                       color: color.withOpacity(0.1),
-                      border: Border.all(
-                        color: color.withOpacity(0.35),
-                        width: 1,
-                      ),
+                      border: Border.all(color: color.withOpacity(0.35), width: 1),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -986,19 +865,14 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                             Text(
                               action['title'] as String,
                               style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
+                                  color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
                             Text(
                               action['subtitle'] as String,
                               style: TextStyle(
-                                color: Colors.white.withOpacity(0.55),
-                                fontSize: 10,
-                              ),
+                                  color: Colors.white.withOpacity(0.55), fontSize: 10),
                             ),
                           ],
                         ),
@@ -1008,121 +882,6 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                 );
               },
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          color: Colors.black.withOpacity(0.3),
-          border: Border.all(
-            color: const Color(0xFF1E88E5).withOpacity(0.2),
-            width: 1,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              icon,
-              color: const Color(0xFF1E88E5),
-              size: 30,
-            ),
-            const SizedBox(height: 10),
-            Text(
-              title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 5),
-            Text(
-              subtitle,
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.7),
-                fontSize: 12,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatisticsCards() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            "Statistics",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              fontFamily: "Orbitron",
-            ),
-          ),
-          const SizedBox(height: 15),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  title: "Active Bugs",
-                  value: listBug.length.toString(),
-                  icon: FontAwesomeIcons.bug,
-                  color: Colors.red,
-                ),
-              ),
-              const SizedBox(width: 15),
-              Expanded(
-                child: _buildStatCard(
-                  title: "DDoS Attacks",
-                  value: listDDoS.length.toString(),
-                  icon: FontAwesomeIcons.server,
-                  color: Colors.orange,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 15),
-          Row(
-            children: [
-              Expanded(
-                child: _buildStatCard(
-                  title: "Custom Payloads",
-                  value: listPayload.length.toString(),
-                  icon: FontAwesomeIcons.code,
-                  color: Colors.blue,
-                ),
-              ),
-              const SizedBox(width: 15),
-              Expanded(
-                child: _buildStatCard(
-                  title: "News Updates",
-                  value: newsList.length.toString(),
-                  icon: FontAwesomeIcons.newspaper,
-                  color: Colors.green,
-                ),
-              ),
-            ],
           ),
         ],
       ),
@@ -1140,41 +899,22 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         color: Colors.black.withOpacity(0.3),
-        border: Border.all(
-          color: color.withOpacity(0.3),
-          width: 1,
-        ),
+        border: Border.all(color: color.withOpacity(0.3), width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(
-                icon,
-                color: color,
-                size: 20,
-              ),
+              Icon(icon, color: color, size: 20),
               const Spacer(),
-              Text(
-                value,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: "Orbitron",
-                ),
-              ),
+              Text(value,
+                  style: TextStyle(
+                      color: color, fontSize: 24, fontWeight: FontWeight.bold, fontFamily: "Orbitron")),
             ],
           ),
           const SizedBox(height: 10),
-          Text(
-            title,
-            style: TextStyle(
-              color: Colors.white.withOpacity(0.7),
-              fontSize: 14,
-            ),
-          ),
+          Text(title, style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14)),
         ],
       ),
     );
@@ -1192,26 +932,16 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
               const Text(
                 "Recent Activity",
                 style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: "Orbitron",
-                ),
+                    color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, fontFamily: "Orbitron"),
               ),
               TextButton(
                 onPressed: () {
                   setState(() {
-                    _selectedIndex = 4; // Activity logs tab index
+                    _selectedIndex = 0;
                     _selectedPage = _buildActivityLogsPage();
                   });
                 },
-                child: const Text(
-                  "View All",
-                  style: TextStyle(
-                    color: Color(0xFF1E88E5),
-                    fontSize: 14,
-                  ),
-                ),
+                child: const Text("View All", style: TextStyle(color: Color(0xFF1E88E5), fontSize: 14)),
               ),
             ],
           ),
@@ -1222,14 +952,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(15),
                 color: Colors.black.withOpacity(0.3),
-                border: Border.all(
-                  color: const Color(0xFF1E88E5).withOpacity(0.2),
-                  width: 1,
-                ),
+                border: Border.all(color: const Color(0xFF1E88E5).withOpacity(0.2), width: 1),
               ),
-              child: const Center(
-                child: CircularProgressIndicator(color: Color(0xFF1E88E5)),
-              ),
+              child: const Center(child: CircularProgressIndicator(color: Color(0xFF1E88E5))),
             )
           else if (_hasActivityLogsError)
             Container(
@@ -1237,123 +962,84 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(15),
                 color: Colors.black.withOpacity(0.3),
-                border: Border.all(
-                  color: Colors.red.withOpacity(0.2),
-                  width: 1,
-                ),
+                border: Border.all(color: Colors.red.withOpacity(0.2), width: 1),
               ),
               child: const Center(
-                child: Text(
-                  "Failed to load activity logs",
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
-                  ),
-                ),
+                child: Text("Failed to load activity logs",
+                    style: TextStyle(color: Colors.white70, fontSize: 14)),
               ),
             )
           else if (_activityLogs.isEmpty)
-              Container(
-                height: 120,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(15),
-                  color: Colors.black.withOpacity(0.3),
-                  border: Border.all(
-                    color: const Color(0xFF1E88E5).withOpacity(0.2),
-                    width: 1,
+            Container(
+              height: 120,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(15),
+                color: Colors.black.withOpacity(0.3),
+                border: Border.all(color: const Color(0xFF1E88E5).withOpacity(0.2), width: 1),
+              ),
+              child: const Center(
+                child: Text("No activity logs available",
+                    style: TextStyle(color: Colors.white54, fontSize: 14)),
+              ),
+            )
+          else
+            ..._activityLogs.take(3).map((log) {
+              final timestamp = DateTime.tryParse(log['timestamp'] ?? '') ?? DateTime.now();
+              final formattedTime = _formatDateTime(timestamp);
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
+                    color: Colors.black.withOpacity(0.3),
+                    border: Border.all(
+                        color: _getActivityColor(log['activity']).withOpacity(0.2), width: 1),
                   ),
-                ),
-                child: const Center(
-                  child: Text(
-                    "No activity logs available",
-                    style: TextStyle(
-                      color: Colors.white54,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
-              )
-            else
-              ..._activityLogs.take(3).map((log) {
-                final timestamp = DateTime.tryParse(log['timestamp'] ?? '') ?? DateTime.now();
-                final formattedTime = _formatDateTime(timestamp);
-
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(15),
-                      color: Colors.black.withOpacity(0.3),
-                      border: Border.all(
-                        color: _getActivityColor(log['activity']).withOpacity(0.2),
-                        width: 1,
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: _getActivityColor(log['activity']).withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(_getActivityIcon(log['activity']),
+                            color: _getActivityColor(log['activity']), size: 20),
                       ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: _getActivityColor(log['activity']).withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Icon(
-                            _getActivityIcon(log['activity']),
-                            color: _getActivityColor(log['activity']),
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: 15),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                log['activity'] ?? 'Unknown Activity',
+                      const SizedBox(width: 15),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(log['activity'] ?? 'Unknown Activity',
                                 style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              if (log['details'] != null && log['details']['target'] != null)
-                                Text(
-                                  "Target: ${log['details']['target']}",
+                                    color: Colors.white, fontWeight: FontWeight.bold)),
+                            if (log['details'] != null && log['details']['target'] != null)
+                              Text("Target: ${log['details']['target']}",
                                   style: TextStyle(
-                                    color: Colors.white.withOpacity(0.7),
-                                    fontSize: 12,
-                                  ),
-                                ),
-                            ],
-                          ),
+                                      color: Colors.white.withOpacity(0.7), fontSize: 12)),
+                          ],
                         ),
-                        Text(
-                          formattedTime,
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.5),
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                      Text(formattedTime,
+                          style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
+                    ],
                   ),
-                );
-              }).toList(),
+                ),
+              );
+            }).toList(),
         ],
       ),
     );
   }
 
-  // Glassmorphism card widget
   Widget _glassCard({required Widget child}) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         color: Colors.black.withOpacity(0.3),
-        border: Border.all(
-          color: const Color(0xFF1E88E5).withOpacity(0.2),
-          width: 1,
-        ),
+        border: Border.all(color: const Color(0xFF1E88E5).withOpacity(0.2), width: 1),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
@@ -1365,8 +1051,8 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     );
   }
 
-  // Glassmorphism button widget
-  Widget _glassButton({required Icon icon, required Text label, required VoidCallback onPressed}) {
+  Widget _glassButton(
+      {required Icon icon, required Text label, required VoidCallback onPressed}) {
     return ElevatedButton.icon(
       icon: icon,
       label: label,
@@ -1397,7 +1083,8 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text("Account Info", style: TextStyle(color: Colors.white, fontSize: 20, fontFamily: "Orbitron")),
+                const Text("Account Info",
+                    style: TextStyle(color: Colors.white, fontSize: 20, fontFamily: "Orbitron")),
                 const SizedBox(height: 12),
                 _infoCard(Icons.person, "Username", username),
                 _infoCard(Icons.date_range, "Expired", expiredDate),
@@ -1429,7 +1116,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                     if (!mounted) return;
                     Navigator.of(context).pushAndRemoveUntil(
                       MaterialPageRoute(builder: (_) => const LoginPage()),
-                          (route) => false,
+                      (route) => false,
                     );
                   },
                 ),
@@ -1462,16 +1149,11 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     );
   }
 
-  // Widget untuk menampilkan logo PNG
   Widget _buildLogo({double height = 40}) {
-    return Image.asset(
-      'assets/images/title.png',
-      height: height,
-      fit: BoxFit.contain,
-    );
+    return Image.asset('assets/images/title.png', height: height, fit: BoxFit.contain);
   }
 
-  // Bottom navigation bar items: Home, Tools, DDoS, Profile
+  // ✅ Navbar: Home, Tools, DDoS, Profile
   List<BottomNavigationBarItem> _buildBottomNavBarItems() {
     return [
       BottomNavigationBarItem(
@@ -1558,7 +1240,6 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                           const SizedBox(height: 15),
                           _buildLogo(height: 40),
                           const SizedBox(height: 15),
-                          // Menggunakan card kecil untuk info username dan role
                           _infoCard(Icons.person, "Username", username),
                           _infoCard(Icons.admin_panel_settings, "Role", role),
                         ],
@@ -1566,7 +1247,6 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                     ),
                   ),
                   const SizedBox(height: 20),
-
                   if (role == "reseller" || role == "owner")
                     ListTile(
                       leading: const Icon(Icons.person_add, color: Color(0xFF1E88E5)),
@@ -1579,7 +1259,6 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                       title: const Text("Admin Page", style: TextStyle(color: Colors.white70)),
                       onTap: () => _selectFromDrawer('admin'),
                     ),
-                  // Tambahkan menu untuk Sender Management
                   ListTile(
                     leading: const Icon(Icons.phone_android, color: Color(0xFF1E88E5)),
                     title: const Text("Sender Management", style: TextStyle(color: Colors.white70)),
@@ -1592,14 +1271,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         ),
       ),
       body: Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFF0A1628),
-        ),
+        decoration: const BoxDecoration(color: Color(0xFF0A1628)),
         child: SafeArea(
-          child: FadeTransition(
-            opacity: _animation,
-            child: _selectedPage,
-          ),
+          child: FadeTransition(opacity: _animation, child: _selectedPage),
         ),
       ),
       bottomNavigationBar: Container(
@@ -1685,8 +1359,7 @@ class _NewsMediaState extends State<NewsMedia> {
           child: VideoPlayer(_controller!),
         );
       } else {
-        return const Center(
-            child: CircularProgressIndicator(color: Color(0xFF1E88E5)));
+        return const Center(child: CircularProgressIndicator(color: Color(0xFF1E88E5)));
       }
     } else {
       return Image.network(
