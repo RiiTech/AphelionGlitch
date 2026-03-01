@@ -192,10 +192,10 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
       context: context,
       barrierDismissible: false,
       builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xFF0f0e17).withOpacity(0.95),
+        backgroundColor: Color(0xFF0f0e17).withOpacity(0.95),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
-          side: BorderSide(color: const Color(0xFFff8906).withOpacity(0.3), width: 1),
+          side: BorderSide(color: Color(0xFFff8906).withOpacity(0.3), width: 1),
         ),
         title: const Text("⚠️ Session Expired", style: TextStyle(color: const Color(0xFFfffffe), fontFamily: "Orbitron")),
         content: Text(message, style: const TextStyle(color: const Color(0xFFa7a9be), fontFamily: "ShareTechMono")),
@@ -298,11 +298,11 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
           ),
         );
       }).toList(),
-      color: const Color(0xFF0f0e17).withOpacity(0.97),
+      color: Color(0xFF0f0e17).withOpacity(0.97),
       elevation: 8,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: const Color(0xFFff8906).withOpacity(0.2), width: 1),
+        side: BorderSide(color: Color(0xFFff8906).withOpacity(0.2), width: 1),
       ),
     ).then((value) {
       // Handle pilihan dari popup menu
@@ -404,14 +404,14 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
               borderRadius: BorderRadius.circular(20),
               gradient: LinearGradient(
                 colors: [
-                  const Color(0xFFff8906).withOpacity(0.2),
-                  const Color(0xFFff8906).withOpacity(0.05),
+                  Color(0xFFff8906).withOpacity(0.2),
+                  Color(0xFFff8906).withOpacity(0.05),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               border: Border.all(
-                color: const Color(0xFFff8906).withOpacity(0.2),
+                color: Color(0xFFff8906).withOpacity(0.2),
                 width: 1,
               ),
             ),
@@ -477,7 +477,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
               child: Text(
                 "No activity logs available",
                 style: TextStyle(
-                  color: const Color(0xFFa7a9be).withOpacity(0.6),
+                  color: Color(0xFFa7a9be).withOpacity(0.6),
                   fontSize: 16,
                 ),
               ),
@@ -495,7 +495,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(15),
-                    color: const Color(0xFF0f0e17).withOpacity(0.8),
+                    color: Color(0xFF0f0e17).withOpacity(0.8),
                     border: Border.all(
                       color: _getActivityColor(log['activity']).withOpacity(0.3),
                       width: 1,
@@ -658,14 +658,14 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         borderRadius: BorderRadius.circular(10),
         gradient: LinearGradient(
           colors: [
-            const Color(0xFFff8906).withOpacity(0.2),
-            const Color(0xFFff8906).withOpacity(0.05),
+            Color(0xFFff8906).withOpacity(0.2),
+            Color(0xFFff8906).withOpacity(0.05),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         border: Border.all(
-          color: const Color(0xFFff8906).withOpacity(0.2),
+          color: Color(0xFFff8906).withOpacity(0.2),
           width: 1,
         ),
       ),
@@ -675,7 +675,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
           Row(
             children: [
               CircleAvatar(
-                backgroundColor: const Color(0xFFff8906).withOpacity(0.2),
+                backgroundColor: Color(0xFFff8906).withOpacity(0.2),
                 radius: 30,
                 child: const Icon(
                   Icons.person,
@@ -734,7 +734,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             children: [
               Icon(
                 Icons.date_range,
-                color: const Color(0xFFff8906).withOpacity(0.7),
+                color: Color(0xFFff8906).withOpacity(0.7),
                 size: 16,
               ),
               const SizedBox(width: 5),
@@ -773,9 +773,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         height: 180,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
-          color: const Color(0xFF0f0e17).withOpacity(0.8),
+          color: Color(0xFF0f0e17).withOpacity(0.8),
           border: Border.all(
-            color: const Color(0xFFff8906).withOpacity(0.2),
+            color: Color(0xFFff8906).withOpacity(0.2),
             width: 1,
           ),
         ),
@@ -783,7 +783,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
           child: Text(
             "No news available",
             style: TextStyle(
-              color: const Color(0xFFa7a9be).withOpacity(0.6),
+              color: Color(0xFFa7a9be).withOpacity(0.6),
               fontFamily: "ShareTechMono",
             ),
           ),
@@ -809,10 +809,10 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                 margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
-                  color: const Color(0xFFfffffe).withOpacity(0.05),
+                  color: Color(0xFFfffffe).withOpacity(0.05),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFff8906).withOpacity(0.1),
+                      color: Color(0xFFff8906).withOpacity(0.1),
                       blurRadius: 15,
                       spreadRadius: 2,
                     ),
@@ -829,7 +829,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              const Color(0xFF0f0e17).withOpacity(0.85),
+                              Color(0xFF0f0e17).withOpacity(0.85),
                               Colors.transparent
                             ],
                             begin: Alignment.bottomCenter,
@@ -886,7 +886,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                   borderRadius: BorderRadius.circular(10),
                   color: _currentNewsIndex == index
                       ? const Color(0xFFff8906)
-                      : const Color(0xFFa7a9be).withOpacity(0.3),
+                      : Color(0xFFa7a9be).withOpacity(0.3),
                 ),
               ),
             ),
@@ -963,9 +963,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
-          color: const Color(0xFF0f0e17).withOpacity(0.8),
+          color: Color(0xFF0f0e17).withOpacity(0.8),
           border: Border.all(
-            color: const Color(0xFFff8906).withOpacity(0.2),
+            color: Color(0xFFff8906).withOpacity(0.2),
             width: 1,
           ),
         ),
@@ -1075,7 +1075,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        color: const Color(0xFF0f0e17).withOpacity(0.8),
+        color: Color(0xFF0f0e17).withOpacity(0.8),
         border: Border.all(
           color: color.withOpacity(0.3),
           width: 1,
@@ -1157,9 +1157,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
               height: 120,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(15),
-                color: const Color(0xFF0f0e17).withOpacity(0.8),
+                color: Color(0xFF0f0e17).withOpacity(0.8),
                 border: Border.all(
-                  color: const Color(0xFFff8906).withOpacity(0.2),
+                  color: Color(0xFFff8906).withOpacity(0.2),
                   width: 1,
                 ),
               ),
@@ -1172,7 +1172,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
               height: 120,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(15),
-                color: const Color(0xFF0f0e17).withOpacity(0.8),
+                color: Color(0xFF0f0e17).withOpacity(0.8),
                 border: Border.all(
                   color: Colors.red.withOpacity(0.2),
                   width: 1,
@@ -1193,9 +1193,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                 height: 120,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(15),
-                  color: const Color(0xFF0f0e17).withOpacity(0.8),
+                  color: Color(0xFF0f0e17).withOpacity(0.8),
                   border: Border.all(
-                    color: const Color(0xFFff8906).withOpacity(0.2),
+                    color: Color(0xFFff8906).withOpacity(0.2),
                     width: 1,
                   ),
                 ),
@@ -1203,7 +1203,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                   child: Text(
                     "No activity logs available",
                     style: TextStyle(
-                      color: const Color(0xFFa7a9be).withOpacity(0.6),
+                      color: Color(0xFFa7a9be).withOpacity(0.6),
                       fontSize: 14,
                     ),
                   ),
@@ -1220,7 +1220,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(15),
-                      color: const Color(0xFF0f0e17).withOpacity(0.8),
+                      color: Color(0xFF0f0e17).withOpacity(0.8),
                       border: Border.all(
                         color: _getActivityColor(log['activity']).withOpacity(0.2),
                         width: 1,
@@ -1266,7 +1266,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                         Text(
                           formattedTime,
                           style: TextStyle(
-                            color: const Color(0xFFa7a9be).withOpacity(0.7),
+                            color: Color(0xFFa7a9be).withOpacity(0.7),
                             fontSize: 12,
                           ),
                         ),
@@ -1285,14 +1285,14 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        color: const Color(0xFF0f0e17).withOpacity(0.8),
+        color: Color(0xFF0f0e17).withOpacity(0.8),
         border: Border.all(
-          color: const Color(0xFFff8906).withOpacity(0.2),
+          color: Color(0xFFff8906).withOpacity(0.2),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFff8906).withOpacity(0.1),
+            color: Color(0xFFff8906).withOpacity(0.1),
             blurRadius: 20,
             spreadRadius: 5,
           ),
@@ -1320,7 +1320,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         padding: const EdgeInsets.symmetric(vertical: 12),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: const Color(0xFFff8906).withOpacity(0.3), width: 1),
+          side: BorderSide(color: Color(0xFFff8906).withOpacity(0.3), width: 1),
         ),
       ),
       onPressed: onPressed,
@@ -1389,9 +1389,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: BoxDecoration(
-        color: const Color(0xFF0f0e17).withOpacity(0.6),
+        color: Color(0xFF0f0e17).withOpacity(0.6),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFff8906).withOpacity(0.2), width: 1),
+        border: Border.all(color: Color(0xFFff8906).withOpacity(0.2), width: 1),
       ),
       child: Row(
         children: [
@@ -1456,9 +1456,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         centerTitle: true,
         flexibleSpace: Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF0f0e17).withOpacity(0.8),
+            color: Color(0xFF0f0e17).withOpacity(0.8),
             border: Border(
-              bottom: BorderSide(color: const Color(0xFFff8906).withOpacity(0.2), width: 1),
+              bottom: BorderSide(color: Color(0xFFff8906).withOpacity(0.2), width: 1),
             ),
           ),
           child: ClipRRect(
@@ -1479,9 +1479,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         backgroundColor: Colors.transparent,
         child: Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF0f0e17).withOpacity(0.9),
+            color: Color(0xFF0f0e17).withOpacity(0.9),
             border: Border(
-              right: BorderSide(color: const Color(0xFFff8906).withOpacity(0.2), width: 1),
+              right: BorderSide(color: Color(0xFFff8906).withOpacity(0.2), width: 1),
             ),
           ),
           child: ClipRRect(
@@ -1494,7 +1494,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                     height: 180,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [const Color(0xFFff8906).withOpacity(0.1), Colors.transparent],
+                        colors: [Color(0xFFff8906).withOpacity(0.1), Colors.transparent],
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                       ),
@@ -1554,9 +1554,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: const Color(0xFF0f0e17).withOpacity(0.8),
+          color: Color(0xFF0f0e17).withOpacity(0.8),
           border: Border(
-            top: BorderSide(color: const Color(0xFFff8906).withOpacity(0.2), width: 1),
+            top: BorderSide(color: Color(0xFFff8906).withOpacity(0.2), width: 1),
           ),
         ),
         child: ClipRRect(
