@@ -71,10 +71,14 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   int _selectedIndex = 0;
   Widget _selectedPage = const Placeholder();
 
+  // Global key untuk mendapatkan posisi tombol Bug
   final GlobalKey _bugButtonKey = GlobalKey();
+
+  // Controller for news page view
   final PageController _pageController = PageController(viewportFraction: 0.85);
   int _currentNewsIndex = 0;
 
+  // Activity log state
   List<Map<String, dynamic>> _activityLogs = [];
   bool _isLoadingActivityLogs = false;
   bool _hasActivityLogsError = false;
@@ -100,7 +104,10 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     _controller.forward();
 
     _selectedPage = _buildNewsPage();
+
     _initAndroidIdAndConnect();
+
+    // Fetch activity logs when the page is first loaded
     _fetchActivityLogs();
   }
 
@@ -117,9 +124,12 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
       "key": sessionKey,
       "androidId": androidId,
     }));
+
     channel.sink.add(jsonEncode({"type": "stats"}));
+
     channel.stream.listen((event) {
       final data = jsonDecode(event);
+
       if (data['type'] == 'myInfo') {
         if (data['valid'] == false) {
           if (data['reason'] == 'androidIdMismatch') {
@@ -132,15 +142,18 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     });
   }
 
+  // Fetch activity logs from API
   Future<void> _fetchActivityLogs() async {
     setState(() {
       _isLoadingActivityLogs = true;
       _hasActivityLogsError = false;
     });
+
     try {
       final response = await http.get(
         Uri.parse('https://tapops.fanzhosting.my.id/api/user/getActivityLogs?key=$sessionKey'),
       );
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['valid'] == true && data['logs'] != null) {
@@ -173,15 +186,16 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     await Future.delayed(const Duration(milliseconds: 300));
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
+
     if (!mounted) return;
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xFF111827).withOpacity(0.95),
+        backgroundColor: const Color(0xFF0F172A).withOpacity(0.95),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(18),
-          side: BorderSide(color: const Color(0xFF3B82F6).withOpacity(0.3), width: 1),
+          side: BorderSide(color: const Color(0xFF2563EB).withOpacity(0.3), width: 1),
         ),
         title: const Text("⚠️ Session Expired", style: TextStyle(color: Colors.white, fontFamily: "Orbitron")),
         content: Text(message, style: const TextStyle(color: Colors.white70, fontFamily: "ShareTechMono")),
@@ -190,10 +204,10 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             onPressed: () {
               Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(builder: (_) => const LoginPage()),
-                (route) => false,
+                    (route) => false,
               );
             },
-            child: const Text("OK", style: TextStyle(color: Color(0xFF3B82F6))),
+            child: const Text("OK", style: TextStyle(color: Color(0xFF2563EB))),
           ),
         ],
       ),
@@ -205,35 +219,67 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
       _selectedIndex = index;
       _controller.reset();
       _controller.forward();
+
       if (index == 0) {
         _selectedPage = _buildNewsPage();
       } else if (index == 1) {
-        _selectedPage = ToolsPage(sessionKey: sessionKey, userRole: role);
+        // Jika bukan VIP/Owner, langsung buka halaman Bug
+        if (!["vip", "owner"].contains(role.toLowerCase())) {
+          _selectedPage = AttackPage(
+            username: username,
+            password: password,
+            listBug: listBug,
+            role: role,
+            expiredDate: expiredDate,
+            sessionKey: sessionKey,
+          );
+        } else {
+          // Untuk VIP/Owner, tampilkan popup menu
+          _showBugMenu();
+        }
       } else if (index == 2) {
-        Future.microtask(() => _showAccountMenu());
+        _selectedPage = TelegramSpamPage(sessionKey: sessionKey);
+      } else if (index == 3) {
+        _selectedPage = AttackPanel(sessionKey: sessionKey, listDDoS: listDDoS);
+      } else if (index == 4) {
+        _selectedPage = ToolsPage(sessionKey: sessionKey, userRole: role);
       }
     });
   }
 
+  // Fungsi untuk menampilkan popup menu Bug
   void _showBugMenu() {
+    // Dapatkan posisi dan ukuran tombol Bug
     final RenderBox renderBox = _bugButtonKey.currentContext?.findRenderObject() as RenderBox;
     final Offset offset = renderBox.localToGlobal(Offset.zero);
     final Size size = renderBox.size;
 
+    // Tentukan opsi berdasarkan role
     List<Map<String, dynamic>> options = [];
+
     if (["vip", "owner"].contains(role.toLowerCase())) {
       options = [
-        {'title': 'Custom Bug', 'icon': FontAwesomeIcons.squareWhatsapp},
-        {'title': 'Group Bug', 'icon': FontAwesomeIcons.users},
-        {'title': 'Bug', 'icon': FontAwesomeIcons.whatsapp},
+        {
+          'title': 'Custom Bug',
+          'icon': FontAwesomeIcons.squareWhatsapp,
+        },
+        {
+          'title': 'Group Bug',
+          'icon': FontAwesomeIcons.users,
+        },
+        {
+          'title': 'Bug',
+          'icon': FontAwesomeIcons.whatsapp,
+        },
       ];
     }
 
+    // Tampilkan popup menu
     showMenu(
       context: context,
       position: RelativeRect.fromLTRB(
         offset.dx,
-        offset.dy - size.height * 2,
+        offset.dy - size.height * 2, // Posisikan di atas tombol
         offset.dx + size.width,
         offset.dy,
       ),
@@ -244,18 +290,22 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             children: [
               Icon(option['icon'], color: Colors.white70, size: 20),
               const SizedBox(width: 10),
-              Text(option['title'], style: const TextStyle(color: Colors.white)),
+              Text(
+                option['title'],
+                style: const TextStyle(color: Colors.white),
+              ),
             ],
           ),
         );
       }).toList(),
-      color: Colors.black.withOpacity(0.9),
+      color: const Color(0xFF0F172A).withOpacity(0.95),
       elevation: 8,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: const Color(0xFF3B82F6).withOpacity(0.2), width: 1),
+        side: BorderSide(color: const Color(0xFF2563EB).withOpacity(0.2), width: 1),
       ),
     ).then((value) {
+      // Handle pilihan dari popup menu
       if (value != null) {
         setState(() {
           if (value == 'Custom Bug') {
@@ -305,9 +355,11 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
 
   Widget _buildNewsPage() {
     return RefreshIndicator(
-      color: const Color(0xFF3B82F6),
+      color: const Color(0xFF2563EB),
       onRefresh: () async {
+        // Refresh activity logs when user pulls to refresh
         await _fetchActivityLogs();
+        // Simulate refreshing other data
         await Future.delayed(const Duration(seconds: 1));
         setState(() {});
       },
@@ -316,14 +368,18 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Username Card - paling atas
-            _buildWelcomeSection(),
-            // Thumbnail / News Carousel - di bawah username card
+            // User Welcome Section
+
+            // News Carousel
             _buildNewsCarousel(),
-            // Quick Actions Carousel
+            _buildWelcomeSection(),
+
+            // Quick Actions Grid
             _buildQuickActionsGrid(),
+
             // Recent Activity
             _buildRecentActivity(),
+
             const SizedBox(height: 40),
           ],
         ),
@@ -333,12 +389,13 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
 
   Widget _buildActivityLogsPage() {
     return RefreshIndicator(
-      color: const Color(0xFF3B82F6),
+      color: const Color(0xFF2563EB),
       onRefresh: () async {
         await _fetchActivityLogs();
       },
       child: Column(
         children: [
+          // Header
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(20),
@@ -347,20 +404,24 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
               borderRadius: BorderRadius.circular(20),
               gradient: LinearGradient(
                 colors: [
-                  const Color(0xFF3B82F6).withOpacity(0.2),
-                  const Color(0xFF3B82F6).withOpacity(0.05),
+                  const Color(0xFF2563EB).withOpacity(0.2),
+                  const Color(0xFF2563EB).withOpacity(0.05),
                 ],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               border: Border.all(
-                color: const Color(0xFF3B82F6).withOpacity(0.2),
+                color: const Color(0xFF2563EB).withOpacity(0.2),
                 width: 1,
               ),
             ),
             child: Row(
               children: [
-                const Icon(Icons.history, color: Color(0xFF3B82F6), size: 30),
+                Icon(
+                  Icons.history,
+                  color: const Color(0xFF2563EB),
+                  size: 30,
+                ),
                 const SizedBox(width: 15),
                 const Text(
                   "Activity History",
@@ -374,98 +435,121 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
               ],
             ),
           ),
+
+          // Activity logs content
           Expanded(
             child: _isLoadingActivityLogs
-                ? const Center(child: CircularProgressIndicator(color: Color(0xFF3B82F6)))
+                ? const Center(
+              child: CircularProgressIndicator(color: Color(0xFF2563EB)),
+            )
                 : _hasActivityLogsError
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.error_outline, color: Colors.red.withOpacity(0.7), size: 50),
-                            const SizedBox(height: 15),
-                            const Text("Failed to load activity logs",
-                                style: TextStyle(color: Colors.white70, fontSize: 16)),
-                            const SizedBox(height: 15),
-                            ElevatedButton(
-                              onPressed: _fetchActivityLogs,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF3B82F6),
-                                foregroundColor: Colors.black,
-                              ),
-                              child: const Text("Try Again"),
+                ? Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    color: Colors.red.withOpacity(0.7),
+                    size: 50,
+                  ),
+                  const SizedBox(height: 15),
+                  const Text(
+                    "Failed to load activity logs",
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 15),
+                  ElevatedButton(
+                    onPressed: _fetchActivityLogs,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2563EB),
+                      foregroundColor: Colors.black,
+                    ),
+                    child: const Text("Try Again"),
+                  ),
+                ],
+              ),
+            )
+                : _activityLogs.isEmpty
+                ? const Center(
+              child: Text(
+                "No activity logs available",
+                style: TextStyle(
+                  color: Colors.white54,
+                  fontSize: 16,
+                ),
+              ),
+            )
+                : ListView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: _activityLogs.length,
+              itemBuilder: (context, index) {
+                final log = _activityLogs[index];
+                final timestamp = DateTime.tryParse(log['timestamp'] ?? '') ?? DateTime.now();
+                final formattedTime = _formatDateTime(timestamp);
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
+                    color: const Color(0xFF1E3A5F).withOpacity(0.4),
+                    border: Border.all(
+                      color: _getActivityColor(log['activity']).withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: _getActivityColor(log['activity']).withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                          ],
-                        ),
-                      )
-                    : _activityLogs.isEmpty
-                        ? const Center(
-                            child: Text("No activity logs available",
-                                style: TextStyle(color: Colors.white54, fontSize: 16)),
-                          )
-                        : ListView.builder(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
-                            itemCount: _activityLogs.length,
-                            itemBuilder: (context, index) {
-                              final log = _activityLogs[index];
-                              final timestamp =
-                                  DateTime.tryParse(log['timestamp'] ?? '') ?? DateTime.now();
-                              final formattedTime = _formatDateTime(timestamp);
-                              return Container(
-                                margin: const EdgeInsets.only(bottom: 12),
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(15),
-                                  color: Colors.black.withOpacity(0.3),
-                                  border: Border.all(
-                                    color: _getActivityColor(log['activity']).withOpacity(0.3),
-                                    width: 1,
+                            child: Icon(
+                              _getActivityIcon(log['activity']),
+                              color: _getActivityColor(log['activity']),
+                              size: 20,
+                            ),
+                          ),
+                          const SizedBox(width: 15),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  log['activity'] ?? 'Unknown Activity',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(8),
-                                          decoration: BoxDecoration(
-                                            color: _getActivityColor(log['activity']).withOpacity(0.2),
-                                            borderRadius: BorderRadius.circular(10),
-                                          ),
-                                          child: Icon(
-                                            _getActivityIcon(log['activity']),
-                                            color: _getActivityColor(log['activity']),
-                                            size: 20,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 15),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                log['activity'] ?? 'Unknown Activity',
-                                                style: const TextStyle(
-                                                    color: Colors.white, fontWeight: FontWeight.bold),
-                                              ),
-                                              Text(
-                                                formattedTime,
-                                                style: TextStyle(
-                                                    color: Colors.white.withOpacity(0.7), fontSize: 12),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 10),
-                                    if (log['details'] != null) _buildActivityDetails(log['details']),
-                                  ],
+                                Text(
+                                  formattedTime,
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.7),
+                                    fontSize: 12,
+                                  ),
                                 ),
-                              );
-                            },
+                              ],
+                            ),
                           ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      if (log['details'] != null)
+                        _buildActivityDetails(log['details']),
+                    ],
+                  ),
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -483,12 +567,22 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("${entry.key}:",
-                    style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12)),
+                Text(
+                  "${entry.key}:",
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 12,
+                  ),
+                ),
                 const SizedBox(width: 5),
                 Expanded(
-                  child: Text(entry.value.toString(),
-                      style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                  child: Text(
+                    entry.value.toString(),
+                    style: const TextStyle(
+                      color: Colors.white70,
+                      fontSize: 12,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -500,50 +594,79 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
 
   Color _getActivityColor(String? activity) {
     if (activity == null) return Colors.grey;
-    if (activity.contains('Bug') || activity.contains('Attack')) return Colors.red;
-    if (activity.contains('Call')) return Colors.orange;
-    if (activity.contains('Create') || activity.contains('Add')) return Colors.green;
-    if (activity.contains('Delete') || activity.contains('Failed')) return Colors.red;
-    if (activity.contains('Edit') || activity.contains('Change')) return Colors.blue;
-    if (activity.contains('Cooldown')) return Colors.amber;
-    return const Color(0xFF3B82F6);
+
+    if (activity.contains('Bug') || activity.contains('Attack')) {
+      return Colors.red;
+    } else if (activity.contains('Call')) {
+      return Colors.orange;
+    } else if (activity.contains('Create') || activity.contains('Add')) {
+      return Colors.green;
+    } else if (activity.contains('Delete') || activity.contains('Failed')) {
+      return Colors.red;
+    } else if (activity.contains('Edit') || activity.contains('Change')) {
+      return Colors.blue;
+    } else if (activity.contains('Cooldown')) {
+      return Colors.amber;
+    }
+
+    return const Color(0xFF2563EB);
   }
 
   IconData _getActivityIcon(String? activity) {
     if (activity == null) return Icons.info;
-    if (activity.contains('Bug') || activity.contains('Attack')) return Icons.bug_report;
-    if (activity.contains('Call')) return Icons.phone;
-    if (activity.contains('Create') || activity.contains('Add')) return Icons.person_add;
-    if (activity.contains('Delete')) return Icons.delete;
-    if (activity.contains('Edit') || activity.contains('Change')) return Icons.edit;
-    if (activity.contains('Cooldown')) return Icons.timer;
-    if (activity.contains('DDOS')) return Icons.flash_on;
+
+    if (activity.contains('Bug') || activity.contains('Attack')) {
+      return Icons.bug_report;
+    } else if (activity.contains('Call')) {
+      return Icons.phone;
+    } else if (activity.contains('Create') || activity.contains('Add')) {
+      return Icons.person_add;
+    } else if (activity.contains('Delete')) {
+      return Icons.delete;
+    } else if (activity.contains('Edit') || activity.contains('Change')) {
+      return Icons.edit;
+    } else if (activity.contains('Cooldown')) {
+      return Icons.timer;
+    } else if (activity.contains('DDOS')) {
+      return Icons.flash_on;
+    }
+
     return Icons.info;
   }
 
   String _formatDateTime(DateTime dateTime) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
-    if (difference.inDays > 0) return '${difference.inDays} day${difference.inDays > 1 ? 's' : ''} ago';
-    if (difference.inHours > 0) return '${difference.inHours} hour${difference.inHours > 1 ? 's' : ''} ago';
-    if (difference.inMinutes > 0) return '${difference.inMinutes} minute${difference.inMinutes > 1 ? 's' : ''} ago';
-    return 'Just now';
+
+    if (difference.inDays > 0) {
+      return '${difference.inDays} day${difference.inDays > 1 ? 's' : ''} ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours} hour${difference.inHours > 1 ? 's' : ''} ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes} minute${difference.inMinutes > 1 ? 's' : ''} ago';
+    } else {
+      return 'Just now';
+    }
   }
 
   Widget _buildWelcomeSection() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(10),
       margin: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: const LinearGradient(
+        borderRadius: BorderRadius.circular(10),
+        gradient: LinearGradient(
           colors: [
-            Color(0xFF1D4ED8),
-            Color(0xFF3B82F6),
+            const Color(0xFF2563EB).withOpacity(0.2),
+            const Color(0xFF2563EB).withOpacity(0.05),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
+        ),
+        border: Border.all(
+          color: const Color(0xFF2563EB).withOpacity(0.2),
+          width: 1,
         ),
       ),
       child: Column(
@@ -552,19 +675,23 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
           Row(
             children: [
               CircleAvatar(
-                backgroundColor: const Color(0xFF1E40AF),
+                backgroundColor: const Color(0xFF2563EB).withOpacity(0.2),
                 radius: 30,
-                child: const Icon(Icons.person, color: Color(0xFF60A5FA), size: 30),
+                child: const Icon(
+                  Icons.person,
+                  color: Color(0xFF2563EB),
+                  size: 30,
+                ),
               ),
               const SizedBox(width: 15),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       "Welcome back,",
                       style: TextStyle(
-                        color: Color(0xFF9CA3AF),
+                        color: Colors.white.withOpacity(0.7),
                         fontSize: 14,
                         fontFamily: "ShareTechMono",
                       ),
@@ -572,7 +699,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                     Text(
                       username,
                       style: const TextStyle(
-                        color: Color(0xFF60A5FA),
+                        color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         fontFamily: "Orbitron",
@@ -584,9 +711,12 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF111827),
+                  color: _getRoleColor().withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: const Color(0xFF1F2937), width: 1),
+                  border: Border.all(
+                    color: _getRoleColor().withOpacity(0.5),
+                    width: 1,
+                  ),
                 ),
                 child: Text(
                   role.toUpperCase(),
@@ -602,12 +732,16 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
           const SizedBox(height: 15),
           Row(
             children: [
-              const Icon(Icons.date_range, color: Color(0xFF9CA3AF), size: 16),
+              Icon(
+                Icons.date_range,
+                color: const Color(0xFF2563EB).withOpacity(0.7),
+                size: 16,
+              ),
               const SizedBox(width: 5),
               Text(
                 "Account expires: $expiredDate",
-                style: const TextStyle(
-                  color: Color(0xFF9CA3AF),
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
                   fontSize: 14,
                   fontFamily: "ShareTechMono",
                 ),
@@ -621,10 +755,14 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
 
   Color _getRoleColor() {
     switch (role.toLowerCase()) {
-      case 'owner': return Colors.red;
-      case 'vip': return Colors.amber;
-      case 'reseller': return Colors.blue;
-      default: return const Color(0xFF3B82F6);
+      case 'owner':
+        return Colors.red;
+      case 'vip':
+        return Colors.amber;
+      case 'reseller':
+        return Colors.blue;
+      default:
+        return const Color(0xFF2563EB);
     }
   }
 
@@ -635,12 +773,20 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         height: 180,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
-          color: Colors.black.withOpacity(0.3),
-          border: Border.all(color: const Color(0xFF3B82F6).withOpacity(0.2), width: 1),
+          color: const Color(0xFF1E3A5F).withOpacity(0.4),
+          border: Border.all(
+            color: const Color(0xFF2563EB).withOpacity(0.2),
+            width: 1,
+          ),
         ),
         child: const Center(
-          child: Text("No news available",
-              style: TextStyle(color: Colors.white54, fontFamily: "ShareTechMono")),
+          child: Text(
+            "No news available",
+            style: TextStyle(
+              color: Colors.white54,
+              fontFamily: "ShareTechMono",
+            ),
+          ),
         ),
       );
     }
@@ -652,14 +798,19 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
           child: PageView.builder(
             controller: _pageController,
             itemCount: newsList.length,
-            onPageChanged: (index) => setState(() => _currentNewsIndex = index),
+            onPageChanged: (index) {
+              setState(() {
+                _currentNewsIndex = index;
+              });
+            },
             itemBuilder: (context, index) {
               final item = newsList[index];
               return Container(
                 margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(20),
-                  color: Colors.white.withOpacity(0.08),
+                  color: Colors.white.withOpacity(0.1),
+                  
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(20),
@@ -671,7 +822,10 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                       Container(
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
-                            colors: [Colors.black.withOpacity(0.7), Colors.transparent],
+                            colors: [
+                              Colors.black.withOpacity(0.7),
+                              Colors.transparent
+                            ],
                             begin: Alignment.bottomCenter,
                             end: Alignment.topCenter,
                           ),
@@ -696,7 +850,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                             const SizedBox(height: 4),
                             Text(
                               item['desc'] ?? '',
-                              style: const TextStyle(color: Colors.white70, fontFamily: "ShareTechMono"),
+                              style: const TextStyle(
+                                  color: Colors.white70,
+                                  fontFamily: "ShareTechMono"),
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -715,7 +871,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             mainAxisAlignment: MainAxisAlignment.center,
             children: List.generate(
               newsList.length,
-              (index) => AnimatedContainer(
+                  (index) => AnimatedContainer(
                 duration: const Duration(milliseconds: 300),
                 margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
                 height: 8,
@@ -723,7 +879,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
                   color: _currentNewsIndex == index
-                      ? const Color(0xFF3B82F6)
+                      ? const Color(0xFF2563EB)
                       : Colors.white.withOpacity(0.3),
                 ),
               ),
@@ -733,148 +889,170 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     );
   }
 
-  // ✅ Quick Actions - Horizontal Carousel (5 items)
   Widget _buildQuickActionsGrid() {
-    final actions = [
-      {
-        'icon': FontAwesomeIcons.telegram,
-        'title': 'Join Channel',
-        'subtitle': 'Get updates',
-        'color': const Color(0xFF1D4ED8),
-        'onTap': () async {
-          final uri = Uri.parse("tg://resolve?domain=aphelionlabs");
-          if (await canLaunchUrl(uri)) {
-            await launchUrl(uri, mode: LaunchMode.externalApplication);
-          } else {
-            await launchUrl(Uri.parse("https://t.me/aphelionlabs"),
-                mode: LaunchMode.externalApplication);
-          }
-        },
-      },
-      {
-        'icon': Icons.phone_android,
-        'title': 'Manage Sender',
-        'subtitle': 'Configure devices',
-        'color': const Color(0xFF3B82F6),
-        'onTap': () {
-          setState(() {
-            _selectedPage = SenderPage(sessionKey: sessionKey);
-          });
-        },
-      },
-      {
-        'icon': FontAwesomeIcons.whatsapp,
-        'title': 'WhatsApp Bug',
-        'subtitle': 'Launch attack',
-        'color': const Color(0xFF43A047),
-        'onTap': () {
-          setState(() {
-            if (["vip", "owner"].contains(role.toLowerCase())) {
-              _showBugMenu();
-            } else {
-              _selectedPage = AttackPage(
-                username: username,
-                password: password,
-                listBug: listBug,
-                role: role,
-                expiredDate: expiredDate,
-                sessionKey: sessionKey,
-              );
-            }
-          });
-        },
-      },
-      {
-        'icon': FontAwesomeIcons.paperPlane,
-        'title': 'Telegram',
-        'subtitle': 'Spam tool',
-        'color': const Color(0xFF039BE5),
-        'onTap': () {
-          setState(() {
-            _selectedPage = TelegramSpamPage(sessionKey: sessionKey);
-          });
-        },
-      },
-      {
-        'icon': FontAwesomeIcons.server,
-        'title': 'DDoS',
-        'subtitle': 'Attack panel',
-        'color': const Color(0xFFE53935),
-        'onTap': () {
-          setState(() {
-            _selectedPage = AttackPanel(sessionKey: sessionKey, listDDoS: listDDoS);
-          });
-        },
-      },
-    ];
-
     return Padding(
-      padding: const EdgeInsets.only(left: 16, right: 0, top: 16, bottom: 8),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: Text(
-              "Quick Actions",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                fontFamily: "Orbitron",
-              ),
+          const Text(
+            "Quick Actions",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              fontFamily: "Orbitron",
             ),
           ),
-          const SizedBox(height: 14),
-          SizedBox(
-            height: 110,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              itemCount: actions.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 12),
-              itemBuilder: (context, index) {
-                final action = actions[index];
-                final color = action['color'] as Color;
-                return InkWell(
-                  onTap: action['onTap'] as VoidCallback,
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    width: 110,
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(16),
-                      color: color.withOpacity(0.1),
-                      border: Border.all(color: color.withOpacity(0.35), width: 1),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Icon(action['icon'] as IconData, color: color, size: 26),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              action['title'] as String,
-                              style: const TextStyle(
-                                  color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            Text(
-                              action['subtitle'] as String,
-                              style: TextStyle(
-                                  color: Colors.white.withOpacity(0.55), fontSize: 10),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
+          const SizedBox(height: 15),
+          GridView.count(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisCount: 2,
+            crossAxisSpacing: 15,
+            mainAxisSpacing: 15,
+            childAspectRatio: 1.2,
+            children: [
+              _buildActionCard(
+                icon: FontAwesomeIcons.telegram,
+                title: "Join Channel",
+                subtitle: "Get updates",
+                onTap: () async {
+                  final uri = Uri.parse("tg://resolve?domain=aphelionlabs");
+                  if (await canLaunchUrl(uri)) {
+                    await launchUrl(uri, mode: LaunchMode.externalApplication);
+                  } else {
+                    await launchUrl(Uri.parse("https://t.me/aphelionlabs"),
+                        mode: LaunchMode.externalApplication);
+                  }
+                },
+              ),
+              _buildActionCard(
+                icon: Icons.phone_android,
+                title: "Manage Senders",
+                subtitle: "Configure devices",
+                onTap: () {
+                  setState(() {
+                    _selectedPage = SenderPage(sessionKey: sessionKey);
+                  });
+                },
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionCard({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          color: const Color(0xFF1E3A5F).withOpacity(0.4),
+          border: Border.all(
+            color: const Color(0xFF2563EB).withOpacity(0.2),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: const Color(0xFF2563EB),
+              size: 30,
             ),
+            const SizedBox(height: 10),
+            Text(
+              title,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              subtitle,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.7),
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatisticsCards() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "Statistics",
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              fontFamily: "Orbitron",
+            ),
+          ),
+          const SizedBox(height: 15),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  title: "Active Bugs",
+                  value: listBug.length.toString(),
+                  icon: FontAwesomeIcons.bug,
+                  color: Colors.red,
+                ),
+              ),
+              const SizedBox(width: 15),
+              Expanded(
+                child: _buildStatCard(
+                  title: "DDoS Attacks",
+                  value: listDDoS.length.toString(),
+                  icon: FontAwesomeIcons.server,
+                  color: Colors.orange,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 15),
+          Row(
+            children: [
+              Expanded(
+                child: _buildStatCard(
+                  title: "Custom Payloads",
+                  value: listPayload.length.toString(),
+                  icon: FontAwesomeIcons.code,
+                  color: Colors.blue,
+                ),
+              ),
+              const SizedBox(width: 15),
+              Expanded(
+                child: _buildStatCard(
+                  title: "News Updates",
+                  value: newsList.length.toString(),
+                  icon: FontAwesomeIcons.newspaper,
+                  color: Colors.green,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -891,23 +1069,42 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        color: Colors.black.withOpacity(0.3),
-        border: Border.all(color: color.withOpacity(0.3), width: 1),
+        color: const Color(0xFF1E3A5F).withOpacity(0.4),
+        border: Border.all(
+          color: color.withOpacity(0.3),
+          width: 1,
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, color: color, size: 20),
+              Icon(
+                icon,
+                color: color,
+                size: 20,
+              ),
               const Spacer(),
-              Text(value,
-                  style: TextStyle(
-                      color: color, fontSize: 24, fontWeight: FontWeight.bold, fontFamily: "Orbitron")),
+              Text(
+                value,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: "Orbitron",
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 10),
-          Text(title, style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 14)),
+          Text(
+            title,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.7),
+              fontSize: 14,
+            ),
+          ),
         ],
       ),
     );
@@ -925,16 +1122,26 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
               const Text(
                 "Recent Activity",
                 style: TextStyle(
-                    color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, fontFamily: "Orbitron"),
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: "Orbitron",
+                ),
               ),
               TextButton(
                 onPressed: () {
                   setState(() {
-                    _selectedIndex = 0;
+                    _selectedIndex = 4; // Activity logs tab index
                     _selectedPage = _buildActivityLogsPage();
                   });
                 },
-                child: const Text("View All", style: TextStyle(color: Color(0xFF3B82F6), fontSize: 14)),
+                child: const Text(
+                  "View All",
+                  style: TextStyle(
+                    color: Color(0xFF2563EB),
+                    fontSize: 14,
+                  ),
+                ),
               ),
             ],
           ),
@@ -944,95 +1151,140 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
               height: 120,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(15),
-                color: Colors.black.withOpacity(0.3),
-                border: Border.all(color: const Color(0xFF3B82F6).withOpacity(0.2), width: 1),
+                color: const Color(0xFF1E3A5F).withOpacity(0.4),
+                border: Border.all(
+                  color: const Color(0xFF2563EB).withOpacity(0.2),
+                  width: 1,
+                ),
               ),
-              child: const Center(child: CircularProgressIndicator(color: Color(0xFF3B82F6))),
+              child: const Center(
+                child: CircularProgressIndicator(color: Color(0xFF2563EB)),
+              ),
             )
           else if (_hasActivityLogsError)
             Container(
               height: 120,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(15),
-                color: Colors.black.withOpacity(0.3),
-                border: Border.all(color: Colors.red.withOpacity(0.2), width: 1),
+                color: const Color(0xFF1E3A5F).withOpacity(0.4),
+                border: Border.all(
+                  color: Colors.red.withOpacity(0.2),
+                  width: 1,
+                ),
               ),
               child: const Center(
-                child: Text("Failed to load activity logs",
-                    style: TextStyle(color: Colors.white70, fontSize: 14)),
+                child: Text(
+                  "Failed to load activity logs",
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 14,
+                  ),
+                ),
               ),
             )
           else if (_activityLogs.isEmpty)
-            Container(
-              height: 120,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15),
-                color: Colors.black.withOpacity(0.3),
-                border: Border.all(color: const Color(0xFF3B82F6).withOpacity(0.2), width: 1),
-              ),
-              child: const Center(
-                child: Text("No activity logs available",
-                    style: TextStyle(color: Colors.white54, fontSize: 14)),
-              ),
-            )
-          else
-            ..._activityLogs.take(3).map((log) {
-              final timestamp = DateTime.tryParse(log['timestamp'] ?? '') ?? DateTime.now();
-              final formattedTime = _formatDateTime(timestamp);
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(15),
-                    color: Colors.black.withOpacity(0.3),
-                    border: Border.all(
-                        color: _getActivityColor(log['activity']).withOpacity(0.2), width: 1),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: _getActivityColor(log['activity']).withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(_getActivityIcon(log['activity']),
-                            color: _getActivityColor(log['activity']), size: 20),
-                      ),
-                      const SizedBox(width: 15),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(log['activity'] ?? 'Unknown Activity',
-                                style: const TextStyle(
-                                    color: Colors.white, fontWeight: FontWeight.bold)),
-                            if (log['details'] != null && log['details']['target'] != null)
-                              Text("Target: ${log['details']['target']}",
-                                  style: TextStyle(
-                                      color: Colors.white.withOpacity(0.7), fontSize: 12)),
-                          ],
-                        ),
-                      ),
-                      Text(formattedTime,
-                          style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
-                    ],
+              Container(
+                height: 120,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(15),
+                  color: const Color(0xFF1E3A5F).withOpacity(0.4),
+                  border: Border.all(
+                    color: const Color(0xFF2563EB).withOpacity(0.2),
+                    width: 1,
                   ),
                 ),
-              );
-            }).toList(),
+                child: const Center(
+                  child: Text(
+                    "No activity logs available",
+                    style: TextStyle(
+                      color: Colors.white54,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
+              )
+            else
+              ..._activityLogs.take(3).map((log) {
+                final timestamp = DateTime.tryParse(log['timestamp'] ?? '') ?? DateTime.now();
+                final formattedTime = _formatDateTime(timestamp);
+
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(15),
+                      color: const Color(0xFF1E3A5F).withOpacity(0.4),
+                      border: Border.all(
+                        color: _getActivityColor(log['activity']).withOpacity(0.2),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: _getActivityColor(log['activity']).withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            _getActivityIcon(log['activity']),
+                            color: _getActivityColor(log['activity']),
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 15),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                log['activity'] ?? 'Unknown Activity',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              if (log['details'] != null && log['details']['target'] != null)
+                                Text(
+                                  "Target: ${log['details']['target']}",
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.7),
+                                    fontSize: 12,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        Text(
+                          formattedTime,
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.5),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList(),
         ],
       ),
     );
   }
 
+  // Glassmorphism card widget
   Widget _glassCard({required Widget child}) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
-        color: Colors.black.withOpacity(0.3),
-        border: Border.all(color: const Color(0xFF3B82F6).withOpacity(0.2), width: 1),
+        color: const Color(0xFF1E3A5F).withOpacity(0.4),
+        border: Border.all(
+          color: const Color(0xFF2563EB).withOpacity(0.2),
+          width: 1,
+        ),
+        
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(20),
@@ -1044,19 +1296,19 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     );
   }
 
-  Widget _glassButton(
-      {required Icon icon, required Text label, required VoidCallback onPressed}) {
+  // Glassmorphism button widget
+  Widget _glassButton({required Icon icon, required Text label, required VoidCallback onPressed}) {
     return ElevatedButton.icon(
       icon: icon,
       label: label,
       style: ElevatedButton.styleFrom(
         backgroundColor: Colors.transparent,
-        foregroundColor: const Color(0xFF3B82F6),
+        foregroundColor: const Color(0xFF2563EB),
         shadowColor: Colors.transparent,
         padding: const EdgeInsets.symmetric(vertical: 12),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
-          side: BorderSide(color: const Color(0xFF3B82F6).withOpacity(0.3), width: 1),
+          side: BorderSide(color: const Color(0xFF2563EB).withOpacity(0.3), width: 1),
         ),
       ),
       onPressed: onPressed,
@@ -1076,8 +1328,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text("Account Info",
-                    style: TextStyle(color: Colors.white, fontSize: 20, fontFamily: "Orbitron")),
+                const Text("Account Info", style: TextStyle(color: Colors.white, fontSize: 20, fontFamily: "Orbitron")),
                 const SizedBox(height: 12),
                 _infoCard(Icons.person, "Username", username),
                 _infoCard(Icons.date_range, "Expired", expiredDate),
@@ -1109,7 +1360,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                     if (!mounted) return;
                     Navigator.of(context).pushAndRemoveUntil(
                       MaterialPageRoute(builder: (_) => const LoginPage()),
-                      (route) => false,
+                          (route) => false,
                     );
                   },
                 ),
@@ -1126,13 +1377,13 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
       decoration: BoxDecoration(
-        color: Colors.black.withOpacity(0.2),
+        color: const Color(0xFF1E3A5F).withOpacity(0.3),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF3B82F6).withOpacity(0.2), width: 1),
+        border: Border.all(color: const Color(0xFF2563EB).withOpacity(0.2), width: 1),
       ),
       child: Row(
         children: [
-          Icon(icon, color: const Color(0xFF3B82F6)),
+          Icon(icon, color: const Color(0xFF2563EB)),
           const SizedBox(width: 10),
           Text("$label:", style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.bold)),
           const Spacer(),
@@ -1142,46 +1393,60 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     );
   }
 
+  // Widget untuk menampilkan logo PNG
   Widget _buildLogo({double height = 40}) {
-    return Image.asset('assets/images/title.png', height: height, fit: BoxFit.contain);
+    return Image.asset(
+      'assets/images/title.png',
+      height: height,
+      fit: BoxFit.contain,
+    );
   }
 
-  // ✅ Navbar: Home, Tools, Profile
+  // PERUBAHAN: Buat daftar item bottom navigation bar berdasarkan role
   List<BottomNavigationBarItem> _buildBottomNavBarItems() {
-    return [
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.home_outlined, size: 32),
-        activeIcon: Icon(Icons.home, size: 32),
+    List<BottomNavigationBarItem> items = [
+      BottomNavigationBarItem(
+        icon: Image.asset('assets/images/home.png', width: 50, height: 50),
         label: "Home",
       ),
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.build_outlined, size: 32),
-        activeIcon: Icon(Icons.build, size: 32),
+      // Hanya ada satu menu Bug untuk semua role
+      BottomNavigationBarItem(
+        key: _bugButtonKey, // Tambahkan key untuk mendapatkan posisi tombol
+        icon: Image.asset('assets/images/wa.png', width: 50, height: 50),
+        label: "Bug",
+      ),
+      BottomNavigationBarItem(
+        icon: Image.asset('assets/images/tele.png', width: 50, height: 50),
+        label: "Telegram",
+      ),
+      BottomNavigationBarItem(
+        icon: Image.asset('assets/images/ddos.png', width: 50, height: 50),
+        label: "DDoS",
+      ),
+      BottomNavigationBarItem(
+        icon: Image.asset('assets/images/tools.png', width: 50, height: 50),
         label: "Tools",
       ),
-      const BottomNavigationBarItem(
-        icon: Icon(Icons.account_circle_outlined, size: 32),
-        activeIcon: Icon(Icons.account_circle, size: 32),
-        label: "Profile",
-      ),
     ];
+
+    return items;
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       extendBodyBehindAppBar: true,
-      backgroundColor: const Color(0xFF0A0E1A),
+      backgroundColor: const Color(0xFF0D1B2A),
       appBar: AppBar(
         title: _buildLogo(height: 40),
-        backgroundColor: const Color(0xFF111827),
+        backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
         flexibleSpace: Container(
           decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.3),
+            color: const Color(0xFF1E3A5F).withOpacity(0.4),
             border: Border(
-              bottom: BorderSide(color: const Color(0xFF3B82F6).withOpacity(0.2), width: 1),
+              bottom: BorderSide(color: const Color(0xFF2563EB).withOpacity(0.2), width: 1),
             ),
           ),
           child: ClipRRect(
@@ -1193,7 +1458,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.account_circle, color: Color(0xFF3B82F6)),
+            icon: const Icon(Icons.account_circle, color: Color(0xFF2563EB)),
             onPressed: _showAccountMenu,
           ),
         ],
@@ -1202,9 +1467,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         backgroundColor: Colors.transparent,
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.black.withOpacity(0.5),
+            color: const Color(0xFF0F172A).withOpacity(0.7),
             border: Border(
-              right: BorderSide(color: const Color(0xFF3B82F6).withOpacity(0.2), width: 1),
+              right: BorderSide(color: const Color(0xFF2563EB).withOpacity(0.2), width: 1),
             ),
           ),
           child: ClipRRect(
@@ -1217,7 +1482,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                     height: 180,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                        colors: [const Color(0xFF3B82F6).withOpacity(0.1), Colors.transparent],
+                        colors: [const Color(0xFF2563EB).withOpacity(0.1), Colors.transparent],
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                       ),
@@ -1231,6 +1496,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                           const SizedBox(height: 15),
                           _buildLogo(height: 40),
                           const SizedBox(height: 15),
+                          // Menggunakan card kecil untuk info username dan role
                           _infoCard(Icons.person, "Username", username),
                           _infoCard(Icons.admin_panel_settings, "Role", role),
                         ],
@@ -1238,20 +1504,22 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                     ),
                   ),
                   const SizedBox(height: 20),
+
                   if (role == "reseller" || role == "owner")
                     ListTile(
-                      leading: const Icon(Icons.person_add, color: Color(0xFF3B82F6)),
+                      leading: const Icon(Icons.person_add, color: Color(0xFF2563EB)),
                       title: const Text("Reseller Page", style: TextStyle(color: Colors.white70)),
                       onTap: () => _selectFromDrawer('reseller'),
                     ),
                   if (role == "owner")
                     ListTile(
-                      leading: const Icon(Icons.settings, color: Color(0xFF3B82F6)),
+                      leading: const Icon(Icons.settings, color: Color(0xFF2563EB)),
                       title: const Text("Admin Page", style: TextStyle(color: Colors.white70)),
                       onTap: () => _selectFromDrawer('admin'),
                     ),
+                  // Tambahkan menu untuk Sender Management
                   ListTile(
-                    leading: const Icon(Icons.phone_android, color: Color(0xFF3B82F6)),
+                    leading: const Icon(Icons.phone_android, color: Color(0xFF2563EB)),
                     title: const Text("Sender Management", style: TextStyle(color: Colors.white70)),
                     onTap: () => _selectFromDrawer('sender'),
                   ),
@@ -1262,16 +1530,21 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         ),
       ),
       body: Container(
-        decoration: const BoxDecoration(color: Color(0xFF0A0E1A)),
+        decoration: const BoxDecoration(
+          color: const Color(0xFF0D1B2A),
+        ),
         child: SafeArea(
-          child: FadeTransition(opacity: _animation, child: _selectedPage),
+          child: FadeTransition(
+            opacity: _animation,
+            child: _selectedPage,
+          ),
         ),
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.3),
+          color: const Color(0xFF1E3A5F).withOpacity(0.4),
           border: Border(
-            top: BorderSide(color: const Color(0xFF3B82F6).withOpacity(0.2), width: 1),
+            top: BorderSide(color: const Color(0xFF2563EB).withOpacity(0.2), width: 1),
           ),
         ),
         child: ClipRRect(
@@ -1279,8 +1552,8 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: BottomNavigationBar(
               backgroundColor: Colors.transparent,
-              selectedItemColor: const Color(0xFF3B82F6),
-              unselectedItemColor: Colors.white38,
+              selectedItemColor: const Color(0xFF2563EB),
+              unselectedItemColor: Colors.white54,
               currentIndex: _selectedIndex,
               onTap: _onTabSelected,
               type: BottomNavigationBarType.fixed,
@@ -1350,7 +1623,8 @@ class _NewsMediaState extends State<NewsMedia> {
           child: VideoPlayer(_controller!),
         );
       } else {
-        return const Center(child: CircularProgressIndicator(color: Color(0xFF3B82F6)));
+        return const Center(
+            child: CircularProgressIndicator(color: Color(0xFF2563EB)));
       }
     } else {
       return Image.network(
