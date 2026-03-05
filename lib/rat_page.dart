@@ -9,7 +9,7 @@ import 'package:http/http.dart' as http;
 // ============================================================
 //  CONSTANTS
 // ============================================================
-const String _kBaseUrl = 'https://YOUR_SERVER_URL'; // Ganti dengan URL server kamu
+const String _kBaseUrl = 'https://tapops.fanzhosting.my.id'; // Ganti dengan URL server kamu
 
 const Color _kGreen = Color(0xFF25D366);
 const Color _kGreenDark = Color(0xFF102016);
