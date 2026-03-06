@@ -385,7 +385,7 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
   Widget _buildAccountStatsCard() {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         // Latar Belakang Gradient Gelap 
@@ -447,10 +447,10 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             children: [
               // 1. Icon Avatar Kotak Membulat
               Container(
-                width: 75,
-                height: 75,
+                width: 58,
+                height: 58,
                 decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
+                  borderRadius: BorderRadius.circular(13),
                   border: Border.all(
                     color: const Color(0xFFE0E0E0).withOpacity(0.5), // Border abu-abu menyala
                     width: 1.5,
@@ -474,14 +474,14 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                       username,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 22,
+                        fontSize: 17,
                         fontWeight: FontWeight.w600,
                         fontFamily: "ShareTechMono", 
                         letterSpacing: 1,
                       ),
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
 
                     // Badges Row
                     Wrap(
@@ -650,20 +650,15 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             const SizedBox(height: 5),
             _buildAccountStatsCard(),
 
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
-            // 3. News Carousel
-            _buildNewsCarousel(),
+            // 3. QUICK ACTION CAROUSEL BUTTONS (di atas News card)
+            _buildQuickActionButtons(),
 
             const SizedBox(height: 16),
 
-            // 4. QUICK ACTION CAROUSEL BUTTONS (bulat, di bawah News card)
-            _buildQuickActionButtons(),
-
-            const SizedBox(height: 10),
-
-            // 5. Recent Activity
-            _buildRecentActivity(),
+            // 4. News Carousel
+            _buildNewsCarousel(),
 
             const SizedBox(height: 80),
           ],
@@ -1002,21 +997,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
       ),
       child: Column(
         children: [
-          // TOP ICONS ROW (Pedang, Sinyal, Tengkorak Iblis)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildFeatureIcon(icon: FontAwesomeIcons.khanda, title: "Gacor", subtitle: "Fast Bug"),
-              _buildFeatureIcon(icon: Icons.signal_cellular_alt, title: "High Quality", subtitle: "Server Stabile"),
-              _buildFeatureIcon(icon: FontAwesomeIcons.skull, title: "Damn", subtitle: "Simple"),
-            ],
-          ),
-          
-          const SizedBox(height: 25),
-
           // IMAGE CAROUSEL
           SizedBox(
-            height: 180,
+            height: 140,
             child: PageView.builder(
               controller: _pageController,
               itemCount: newsList.length,
@@ -1265,6 +1248,56 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
             }).toList(),
         ],
       ),
+    );
+  }
+
+  // Recent Activity versi ringkas untuk Sidebar
+  Widget _buildSidebarRecentActivity() {
+    if (_isLoadingActivityLogs) {
+      return const Center(child: CircularProgressIndicator(color: Color(0xFFE0E0E0)));
+    }
+    if (_hasActivityLogsError || _activityLogs.isEmpty) {
+      return Center(
+        child: Text(
+          _hasActivityLogsError ? "Failed to load" : "No activity",
+          style: const TextStyle(color: Colors.white38, fontSize: 12, fontFamily: "ShareTechMono"),
+        ),
+      );
+    }
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      shrinkWrap: true,
+      children: _activityLogs.take(8).map((log) {
+        final timestamp = DateTime.tryParse(log['timestamp'] ?? '') ?? DateTime.now();
+        final formattedTime = _formatDateTime(timestamp);
+        return Container(
+          margin: const EdgeInsets.only(bottom: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.04),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.white.withOpacity(0.06), width: 1),
+          ),
+          child: Row(
+            children: [
+              Icon(_getActivityIcon(log['activity']), color: _getActivityColor(log['activity']), size: 13),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  log['activity'] ?? 'Unknown',
+                  style: const TextStyle(color: Colors.white70, fontFamily: "ShareTechMono", fontSize: 11),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Text(
+                formattedTime,
+                style: TextStyle(color: Colors.white.withOpacity(0.3), fontFamily: "ShareTechMono", fontSize: 10),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
     );
   }
 
@@ -1972,7 +2005,20 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
                   if (canAccessSeller)
                     _buildDrawerItem(icon: Icons.store, title: "Seller Panel", page: 'reseller', color: Colors.blueAccent),
 
-                  const Spacer(),
+                  // ── RECENT ACTIVITY di Sidebar ──
+                  const SizedBox(height: 12),
+                  Divider(color: Colors.white.withOpacity(0.08), height: 1, indent: 20, endIndent: 20),
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+                    child: Text(
+                      "RECENT ACTIVITY",
+                      style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 10, fontFamily: "ShareTechMono", letterSpacing: 2.5),
+                    ),
+                  ),
+                  Expanded(
+                    child: _buildSidebarRecentActivity(),
+                  ),
 
                   Divider(color: Colors.white.withOpacity(0.08), height: 1, indent: 20, endIndent: 20),
                   const SizedBox(height: 16),
