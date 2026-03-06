@@ -644,10 +644,9 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
 
-            // 2. ACCOUNT STATS CARD (Tampilan baru sesuai foto referensi)
-            const SizedBox(height: 5),
+            // 1. ACCOUNT STATS CARD
             _buildAccountStatsCard(),
 
             const SizedBox(height: 16),
@@ -2225,10 +2224,10 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
 
           // 2. Main Content
           SafeArea(
-            top: false,
+            top: true,
             bottom: false,
             child: Padding(
-              padding: const EdgeInsets.only(top: 0),
+              padding: const EdgeInsets.only(top: 56), // tinggi AppBar
               child: FadeTransition(
                 opacity: _animation,
                 child: _selectedPage,
