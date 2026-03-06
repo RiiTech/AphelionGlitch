@@ -2189,6 +2189,31 @@ class _DashboardPageState extends State<DashboardPage> with SingleTickerProvider
 
   @override
   Widget build(BuildContext context) {
+    // Jika bukan home/dashboard, tampilkan page secara full layar tanpa AppBar & BottomNav
+    final bool isHomePage = _activePage == 'home';
+
+    if (!isHomePage) {
+      return Scaffold(
+        key: _scaffoldKey,
+        backgroundColor: Colors.black,
+        drawer: _buildSidebarDrawer(),
+        body: PopScope(
+          canPop: false,
+          onPopInvokedWithResult: (didPop, result) {
+            if (!didPop) {
+              // Kembali ke home saat tombol back ditekan
+              _selectFromDrawer('home');
+            }
+          },
+          child: FadeTransition(
+            opacity: _animation,
+            child: _selectedPage,
+          ),
+        ),
+      );
+    }
+
+    // === DASHBOARD / HOME: tampilan normal dengan AppBar & BottomNav ===
     return Scaffold(
       key: _scaffoldKey,
       extendBodyBehindAppBar: true,
