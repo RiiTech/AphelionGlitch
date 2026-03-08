@@ -21,6 +21,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   final passController = TextEditingController();
   bool isLoading = false;
   String? androidId;
+  bool _isObscure = true; // Tambahan untuk fitur toggle mata password
+
   late VideoPlayerController _videoController;
   late AnimationController _fadeController;
   late AnimationController _slideController;
@@ -93,9 +95,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         final data = jsonDecode(res.body);
 
         if (data['valid'] == true) {
+          // DIUBAH: Navigasi ke splash screen setelah auto-login
           Navigator.pushReplacementNamed(
             context,
-            '/loader',
+            '/splash', 
             arguments: {
               'username': savedUser,
               'password': savedPass,
@@ -152,9 +155,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
         prefs.setString("password", password);
         prefs.setString("key", validData['key']);
 
+        // DIUBAH: Navigasi ke splash screen setelah tombol login ditekan
         Navigator.pushNamed(
           context,
-          '/loader',
+          '/splash',
           arguments: {
             'username': username,
             'password': password,
@@ -201,7 +205,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                     ? Colors.redAccent
                     : title.contains("Expired")
                     ? Colors.amber
-                    : const Color(0xFF4ADE80), // Light green
+                    : const Color(0xFFE0E0E0), // Glowing gray
               ),
             ),
             const SizedBox(width: 12),
@@ -228,7 +232,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
           if (showContact)
             TextButton.icon(
               onPressed: () async {
-                final uri = Uri.parse("tg://resolve?domain=iamrii");
+                final uri = Uri.parse("tg://resolve?domain=RaldzzXyz");
                 if (await canLaunchUrl(uri)) {
                   await launchUrl(uri, mode: LaunchMode.externalApplication);
                 } else {
@@ -246,7 +250,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                 ),
               ),
               style: TextButton.styleFrom(
-                backgroundColor: const Color(0xFF4ADE80).withOpacity(0.2), // Light green
+                backgroundColor: const Color(0xFFE0E0E0).withOpacity(0.2), // Glowing gray
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -254,18 +258,18 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             ),
           TextButton(
             onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(
+              backgroundColor: Colors.white.withOpacity(0.1),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
             child: const Text(
               "CLOSE",
               style: TextStyle(
                 color: Colors.white,
                 fontFamily: 'Orbitron',
                 fontWeight: FontWeight.bold,
-              ),
-            ),
-            style: TextButton.styleFrom(
-              backgroundColor: Colors.white.withOpacity(0.1),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
               ),
             ),
           ),
@@ -276,7 +280,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
 
   // Fungsi untuk membuka bot Telegram
   Future<void> _openTelegramBot() async {
-    final uri = Uri.parse("tg://resolve?domain=iamrii");
+    final uri = Uri.parse("tg://resolve?domain=permen_md");
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
@@ -288,10 +292,10 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: const Color(0xFF050505), // Dark mode base
       body: Stack(
         children: [
-          // Background video with blur effect
+          // Background video with strong dark overlay
           SizedBox(
             height: double.infinity,
             width: double.infinity,
@@ -306,16 +310,16 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                   : Container(color: Colors.black),
             ),
           ),
-          // Gradient overlay with green accent
+          // Gradient overlay for screenshot-like darkness
           Container(
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
+              gradient: RadialGradient(
+                center: const Alignment(0, -0.4),
+                radius: 1.2,
                 colors: [
-                  Colors.black.withOpacity(0.7),
+                  const Color(0xFFE0E0E0).withOpacity(0.15), // Subtle gray glow center
                   Colors.black.withOpacity(0.85),
-                  Colors.black.withOpacity(0.95),
+                  Colors.black.withOpacity(0.98),
                 ],
               ),
             ),
@@ -331,63 +335,81 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      // Logo with animation
+                      // Logo menyerupai screenshot (Circle dengan glowing outline)
                       Hero(
                         tag: 'logo',
                         child: Container(
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.all(4),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
                             shape: BoxShape.circle,
+                            border: Border.all(
+                              color: const Color(0xFFE0E0E0).withOpacity(0.8), // Gray border
+                              width: 2,
+                            ),
                             boxShadow: [
                               BoxShadow(
-                                color: const Color(0xFF4ADE80).withOpacity(0.2), // Light green shadow
-                                blurRadius: 20,
-                                spreadRadius: 2,
+                                color: const Color(0xFFE0E0E0).withOpacity(0.4), // Gray glow
+                                blurRadius: 30,
+                                spreadRadius: 5,
                               ),
                             ],
                           ),
-                          child: Image.asset(
-                            'assets/images/logo.png',
-                            height: 140,
-                            width: 140,
+                          child: ClipOval(
+                            child: Image.asset(
+                              'assets/images/logo.png',
+                              height: 120,
+                              width: 120,
+                              fit: BoxFit.cover,
+                            ),
                           ),
                         ),
                       ),
                       const SizedBox(height: 30),
 
-                      // Welcome text
+                      // Text RONOVA
                       const Text(
-                        "Welcome Back",
+                        "Aphelion Glitch",
                         style: TextStyle(
-                          color: Colors.white,
+                          color: Color(0xFFE0E0E0), // Glowing gray text
                           fontSize: 28,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w900,
                           fontFamily: 'Orbitron',
-                          letterSpacing: 1.2,
+                          letterSpacing: 4.0,
+                          shadows: [
+                            Shadow(
+                              color: Color(0xFFE0E0E0),
+                              blurRadius: 10,
+                            )
+                          ],
                         ),
                       ),
                       const SizedBox(height: 8),
+                      // Text Secure Access System
                       const Text(
-                        "Login to continue to your account",
+                        "Halaman Sebelum Anda Login",
                         style: TextStyle(
                           color: Colors.white70,
-                          fontSize: 16,
+                          fontSize: 14,
                           fontFamily: 'ShareTechMono',
+                          letterSpacing: 1.5,
                         ),
                       ),
                       const SizedBox(height: 40),
 
-                      // Login form container
+                      // Login form container menyerupai desain foto
                       Container(
                         padding: const EdgeInsets.all(24),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(20),
+                          color: const Color(0xFF0F0F0F).withOpacity(0.85), // Dark fill
+                          borderRadius: BorderRadius.circular(24),
+                          border: Border.all(
+                            color: const Color(0xFFE0E0E0).withOpacity(0.2), // Thin outline
+                            width: 1.5,
+                          ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
-                              blurRadius: 10,
+                              color: Colors.black.withOpacity(0.5),
+                              blurRadius: 15,
                               spreadRadius: 2,
                             ),
                           ],
@@ -395,27 +417,30 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                         child: Column(
                           children: [
                             _neonInput("Username", userController, Icons.person),
-                            const SizedBox(height: 20),
-                            _neonInput("Password", passController, Icons.lock, isPassword: true),
+                            const SizedBox(height: 16),
+                            _neonInput("Password", passController, Icons.lock_outline, isPassword: true),
                             const SizedBox(height: 30),
 
-                            // Login Button with green theme
+                            // SIGN IN Button menyerupai di foto
                             Container(
                               width: double.infinity,
-                              height: 50,
+                              height: 55,
                               decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(25),
-                                gradient: LinearGradient(
+                                borderRadius: BorderRadius.circular(16),
+                                gradient: const LinearGradient(
                                   colors: [
-                                    const Color(0xFF4ADE80).withOpacity(0.8), // Light green
-                                    const Color(0xFF4ADE80).withOpacity(0.6), // Light green
+                                    Color(0xFF8A8A8A), // Gray gradient
+                                    Color(0xFFE0E0E0), // Glowing gray
                                   ],
+                                  begin: Alignment.centerLeft,
+                                  end: Alignment.centerRight,
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: const Color(0xFF4ADE80).withOpacity(0.4), // Light green shadow
-                                    blurRadius: 10,
-                                    spreadRadius: 1,
+                                    color: const Color(0xFFE0E0E0).withOpacity(0.5),
+                                    blurRadius: 20,
+                                    spreadRadius: 2,
+                                    offset: const Offset(0, 5),
                                   ),
                                 ],
                               ),
@@ -425,43 +450,43 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                                   backgroundColor: Colors.transparent,
                                   shadowColor: Colors.transparent,
                                   shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(25),
+                                    borderRadius: BorderRadius.circular(16),
                                   ),
                                 ),
                                 child: isLoading
                                     ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    color: Colors.white,
-                                    strokeWidth: 2,
-                                  ),
-                                )
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.black,
+                                          strokeWidth: 2.5,
+                                        ),
+                                      )
                                     : const Text(
-                                  "LOGIN",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.black, // Black text on green button
-                                    fontFamily: 'Orbitron',
-                                    letterSpacing: 1.5,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
+                                        "SIGN IN",
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.black, // Dark text for contrast
+                                          fontFamily: 'Orbitron',
+                                          letterSpacing: 2.0,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 24),
 
-                      // Start Bot Button (replaces Buy Account)
+                      // Start Bot Button (Tetap dipertahankan tanpa dihapus)
                       Container(
                         width: double.infinity,
                         height: 50,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(25),
                           border: Border.all(
-                            color: const Color(0xFF4ADE80).withOpacity(0.5), // Light green border
+                            color: const Color(0xFFE0E0E0).withOpacity(0.3), // Glowing gray border
                             width: 1,
                           ),
                         ),
@@ -470,8 +495,8 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                           label: const Text(
                             "Buy Account",
                             style: TextStyle(
-                              fontSize: 16,
-                              color: Color(0xFF4ADE80), // Light green text
+                              fontSize: 14,
+                              color: Color(0xFFE0E0E0), // Glowing gray text
                               fontFamily: 'Orbitron',
                               letterSpacing: 1.5,
                             ),
@@ -484,6 +509,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
                             ),
                             side: BorderSide.none,
                           ),
+                          icon: const Icon(Icons.shopping_cart, color: Color(0xFFE0E0E0), size: 18),
                         ),
                       ),
                     ],
@@ -497,38 +523,53 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
     );
   }
 
+  // Desain TextField menyerupai di foto (Dark slot shape)
   Widget _neonInput(String hint, TextEditingController controller, IconData icon,
       {bool isPassword = false}) {
-    return TextField(
-      controller: controller,
-      obscureText: isPassword,
-      style: const TextStyle(color: Colors.white, fontSize: 16),
-      cursorColor: const Color(0xFF4ADE80), // Light green cursor
-      decoration: InputDecoration(
-        prefixIcon: Icon(
-          icon,
-          color: Colors.white.withOpacity(0.7),
+    return Container(
+      decoration: BoxDecoration(
+        color: const Color(0xFF141414), // Sangat gelap menyerupai di screenshot
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: TextField(
+        controller: controller,
+        obscureText: isPassword ? _isObscure : false,
+        style: const TextStyle(color: Colors.white, fontSize: 16),
+        cursorColor: const Color(0xFFE0E0E0), // Glowing gray cursor
+        decoration: InputDecoration(
+          prefixIcon: Icon(
+            icon,
+            color: const Color(0xFFE0E0E0).withOpacity(0.8), // Gray icon
+          ),
+          // Tambahan mata jika form ini adalah password
+          suffixIcon: isPassword
+              ? IconButton(
+                  icon: Icon(
+                    _isObscure ? Icons.visibility_off : Icons.visibility,
+                    color: Colors.white.withOpacity(0.5),
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _isObscure = !_isObscure;
+                    });
+                  },
+                )
+              : null,
+          hintText: hint,
+          hintStyle: TextStyle(
+            color: Colors.white.withOpacity(0.4),
+            fontFamily: 'ShareTechMono',
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: const Color(0xFFE0E0E0).withOpacity(0.5), width: 1),
+          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
         ),
-        hintText: hint,
-        hintStyle: TextStyle(
-          color: Colors.white.withOpacity(0.5),
-          fontFamily: 'ShareTechMono',
-        ),
-        filled: true,
-        fillColor: Colors.white.withOpacity(0.1),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide.none,
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide.none,
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(15),
-          borderSide: BorderSide(color: const Color(0xFF4ADE80).withOpacity(0.5), width: 1), // Light green focus
-        ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
       ),
     );
   }
